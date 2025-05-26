@@ -98,7 +98,7 @@ CallbackReturn CartesianElbowExampleController::on_configure(
   }
 
   auto parameters_client =
-      std::make_shared<rclcpp::AsyncParametersClient>(get_node(), "/robot_state_publisher");
+      std::make_shared<rclcpp::AsyncParametersClient>(get_node(), "robot_state_publisher");
   parameters_client->wait_for_service();
 
   auto future = parameters_client->get_parameters({"robot_description"});

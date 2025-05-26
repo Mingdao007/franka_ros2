@@ -85,13 +85,17 @@ CallbackReturn JointVelocityExampleController::on_configure(
   is_gazebo = get_node()->get_parameter("gazebo").as_bool();
 
   auto parameters_client =
-      std::make_shared<rclcpp::AsyncParametersClient>(get_node(), "/robot_state_publisher");
+      std::make_shared<rclcpp::AsyncParametersClient>(get_node(), "robot_state_publisher");
   parameters_client->wait_for_service();
 
   auto future = parameters_client->get_parameters({"robot_description"});
   auto result = future.get();
   if (!result.empty()) {
     robot_description_ = result[0].value_to_string();
+    if (robot_description_.empty()) {
+      RCLCPP_ERROR(get_node()->get_logger(), "robot_description parameter is empty.");
+      return CallbackReturn::ERROR;
+    }
   } else {
     RCLCPP_ERROR(get_node()->get_logger(), "Failed to get robot_description parameter.");
   }

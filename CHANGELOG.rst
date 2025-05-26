@@ -14,6 +14,10 @@ v1.0.1 (2025-05-26)
 
 Requires libfranka >= 0.15.0 and franka_description >= 0.5.0 requires ROS 2 Humble
 
+* Add: example.launch.py - single launch script to launch any example 0->many namespaces
+* Add: franka.ns-launch.yaml launch Base (recommended/required) controllers
+* Add: franka.ns-config.yaml to configure the namespaces of the multiple robots
+* Add: ns-controllers.yaml controller file for namespace agnostic launch of existing controllers.
 * Fix: FrankaRobotStateBroadcaster Lock issue - add configurable timeout (see controllers.yaml)
 * Add: vcstool import for compatible libfranka and franka_description
 * Fix: Franka robot state broadcaster GitHub Issue #94 and #105
