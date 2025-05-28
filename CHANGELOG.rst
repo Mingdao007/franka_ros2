@@ -1,25 +1,25 @@
 Changelog for package franka_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+v2.0.0 (UNRELASED)
+-------------------
+Requires libfranka >= 0.15.0 and franka_description >= 0.5.0 requires ROS 2 Humble
+
+* BREAKING CHANGE: `franka.launch.py` is adapted to use namespaces
+* BREAKING CHANGE: the controller examples were removed to use a single launch script named `example.launch.py`, which can launch multiple robots and takes the arguments from a config file named `franka.config.yaml`
+* Fix: franka gripper works with namespaces
+* Add: `example.launch.py` - a single launch script to launch any number of namespaces
+* Feat: `franka.launch.py` can launch different robots in specific namespaces
+* Add: `franka.config.yaml` to configure the input arguments for multiple robots
+* Add: `controllers.yaml` controller file for namespace-agnostic launch of existing controllers
+
+
 v1.0.2 (2025-05-30)
 -------------------
 
 Requires libfranka >= 0.15.0 and franka_description >= 0.5.0 requires ROS 2 Humble
 
 * Fix: gripper example controller does not start any hardware interface
-
-
-v1.0.1 (2025-05-26)
--------------------
-
-Requires libfranka >= 0.15.0 and franka_description >= 0.5.0 requires ROS 2 Humble
-
-* BREAKING CHANGE: `franka.launch.py` is adapted to use namespaces
-* BREAKING CHANGE: the controller examples were removed to use a single launch script named `example.launch.py`, which can launch multiple robots and takes the arguments from a config file named `franka.config.yaml`
-* Add: `example.launch.py` - a single launch script to launch any number of namespaces
-* Feat: `franka.launch.py` can launch different robots in specific namespaces
-* Add: `franka.config.yaml` to configure the input arguments for multiple robots
-* Add: `controllers.yaml` controller file for namespace-agnostic launch of existing controllers
 
 
 v1.0.1 (2025-05-26)

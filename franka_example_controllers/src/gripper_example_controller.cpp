@@ -53,16 +53,15 @@ CallbackReturn GripperExampleController::on_init() {
 }
 
 CallbackReturn GripperExampleController::on_configure(const rclcpp_lifecycle::State&) {
-  arm_id_ = get_node()->get_parameter("arm_id").as_string();
-
+  namespace_ = get_node()->get_namespace();
   gripper_grasp_action_client_ = rclcpp_action::create_client<franka_msgs::action::Grasp>(
-      get_node(), fmt::format("/{}_gripper/grasp", arm_id_));
+      get_node(), fmt::format("{}/franka_gripper/grasp", namespace_));
 
   gripper_move_action_client_ = rclcpp_action::create_client<franka_msgs::action::Move>(
-      get_node(), fmt::format("/{}_gripper/move", arm_id_));
+      get_node(), fmt::format("{}/franka_gripper/move", namespace_));
 
-  gripper_stop_client_ =
-      get_node()->create_client<std_srvs::srv::Trigger>(fmt::format("/{}_gripper/stop", arm_id_));
+  gripper_stop_client_ = get_node()->create_client<std_srvs::srv::Trigger>(
+      fmt::format("{}/franka_gripper/stop", namespace_));
 
   assignMoveGoalOptionsCallbacks();
   assignGraspGoalOptionsCallbacks();

@@ -432,9 +432,10 @@ hardware_interface::return_type FrankaHardwareInterface::prepare_command_mode_sw
   };
 
   // Check if the number of start and stop interfaces is valid
-  if(start_interfaces.size() == max_number_start_interfaces) {
+  if (start_interfaces.size() == max_number_start_interfaces) {
     RCLCPP_FATAL(getLogger(),
-                 "Invalid number of start interface. Do you return empty array in your controllers command_interface_configuration?");
+                 "Invalid number of start interface. Do you return empty array in your controllers "
+                 "command_interface_configuration?");
     return hardware_interface::return_type::ERROR;
   }
 
