@@ -32,12 +32,14 @@ namespace franka_example_controllers {
 
 controller_interface::InterfaceConfiguration
 GripperExampleController::command_interface_configuration() const {
-  return {};
+  return controller_interface::InterfaceConfiguration{
+      controller_interface::interface_configuration_type::NONE};
 }
 
 controller_interface::InterfaceConfiguration
 GripperExampleController::state_interface_configuration() const {
-  return {};
+  return controller_interface::InterfaceConfiguration{
+      controller_interface::interface_configuration_type::NONE};
 }
 
 CallbackReturn GripperExampleController::on_init() {

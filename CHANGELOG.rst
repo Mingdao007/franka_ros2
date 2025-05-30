@@ -1,8 +1,16 @@
 Changelog for package franka_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Pending Release:
-----------------
+v1.0.2 (2025-05-30)
+-------------------
+
+Requires libfranka >= 0.15.0 and franka_description >= 0.5.0 requires ROS 2 Humble
+
+* Fix: gripper example controller does not start any hardware interface
+
+
+v1.0.1 (2025-05-26)
+-------------------
 
 Requires libfranka >= 0.15.0 and franka_description >= 0.5.0 requires ROS 2 Humble
 
