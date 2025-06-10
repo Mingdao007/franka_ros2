@@ -315,7 +315,7 @@ CallbackReturn FrankaHardwareInterface::on_init(const hardware_interface::Hardwa
       robot_ = std::make_shared<Robot>(robot_ip, getLogger());
     } catch (const franka::Exception& e) {
       logRclcppFatalRed(getLogger(), "Could not connect to robot");
-      logRclcppFatalRed(getLogger(), "%s", e.what());
+      logRclcppFatalRed(getLogger(), fmt::format("{}", e.what()).c_str());
       return CallbackReturn::ERROR;
     }
     RCLCPP_INFO(getLogger(), "Successfully connected to robot");

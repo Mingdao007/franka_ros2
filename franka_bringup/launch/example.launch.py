@@ -46,7 +46,8 @@
 
 
 import os
-import yaml
+import sys
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -54,14 +55,12 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
-# Opens the specified YAML file and loads its contents into a Python dictionary.
+# Add the path to the `utils` folder
+package_share = get_package_share_directory('franka_bringup')
+utils_path = os.path.join(package_share, '..', '..', 'lib', 'franka_bringup', 'utils')
+sys.path.append(os.path.abspath(utils_path))
 
-
-def load_yaml(file_path):
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
-    with open(file_path, 'r') as file:
-        return yaml.safe_load(file)
+from launch_utils import load_yaml  # noqa: E402
 
 # Iterates over the uncommented lines in file specified by the robot_config_file parameter.
 # "Includes" franka.launch.py for each active (uncommented) Robot.

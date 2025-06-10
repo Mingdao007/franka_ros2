@@ -86,6 +86,8 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_robot_nodes(context):
+    load_gripper_launch_configuration = LaunchConfiguration('load_gripper').perform(context)
+    load_gripper = load_gripper_launch_configuration.lower() == 'true'
     urdf_path = PathJoinSubstitution([
         FindPackageShare('franka_description'), 'robots', LaunchConfiguration('urdf_file')
     ]).perform(context)
@@ -96,7 +98,7 @@ def generate_robot_nodes(context):
             'arm_id': LaunchConfiguration('arm_id').perform(context),
             'arm_prefix': LaunchConfiguration('arm_prefix').perform(context),
             'robot_ip': LaunchConfiguration('robot_ip').perform(context),
-            'hand': LaunchConfiguration('load_gripper').perform(context),
+            'hand': load_gripper_launch_configuration,
             'use_fake_hardware': LaunchConfiguration('use_fake_hardware').perform(context),
             'fake_sensor_commands': LaunchConfiguration('fake_sensor_commands').perform(context),
         }
@@ -123,8 +125,10 @@ def generate_robot_nodes(context):
             package='controller_manager',
             executable='ros2_control_node',
             namespace=namespace,
-            parameters=[controllers_yaml,
-                        {'robot_description': robot_description}],
+            parameters=[
+                controllers_yaml,
+                {'robot_description': robot_description},
+                {'load_gripper': load_gripper}],
             output='screen',
             on_exit=Shutdown(),
         ),

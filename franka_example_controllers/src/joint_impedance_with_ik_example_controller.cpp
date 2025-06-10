@@ -235,8 +235,8 @@ CallbackReturn JointImpedanceWithIKExampleController::on_configure(
                                                    arm_id_ + "/" + k_robot_state_interface_name));
 
   auto collision_client = get_node()->create_client<franka_msgs::srv::SetFullCollisionBehavior>(
-      "/service_server/set_full_collision_behavior");
-  compute_ik_client_ = get_node()->create_client<moveit_msgs::srv::GetPositionIK>("/compute_ik");
+      "service_server/set_full_collision_behavior");
+  compute_ik_client_ = get_node()->create_client<moveit_msgs::srv::GetPositionIK>("compute_ik");
 
   while (!compute_ik_client_->wait_for_service(1s) || !collision_client->wait_for_service(1s)) {
     if (!rclcpp::ok()) {

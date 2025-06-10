@@ -183,6 +183,8 @@ To verify that your setup works correctly without a robot, you can run the follo
 ros2 launch franka_fr3_moveit_config moveit.launch.py robot_ip:=dont-care use_fake_hardware:=true
 ```
 
+If you want to run this example with namespaces, you would need to use the argument `namespace` and manually write your namespace in `moveit.rviz` under `Move Group Namespace`.
+
 # Run a ROS 2 example controller
 
 To run any example controller, make sure to add your desired configuration in `franka.config.yaml` and run:
