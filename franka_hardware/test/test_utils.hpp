@@ -29,6 +29,7 @@ const std::string k_position_controller{"position"};
 const std::string k_velocity_controller{"velocity"};
 const std::string k_effort_controller{"effort"};
 const std::string k_joint_name{"joint"};
+const std::string k_arm_id{"fr3"};
 const size_t k_number_of_joints{7};
 const double k_EPS{1e-5};
 

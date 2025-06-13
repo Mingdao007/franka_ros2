@@ -73,7 +73,7 @@ TEST_P(
     stop_interface.push_back(name + "/" + command_interface_name);
   }
 
-  start_interface = {"fr3_joint1/" + command_interface_name};
+  start_interface = {"fr3_joint1/" + k_position_controller};
 
   EXPECT_THROW(default_franka_hardware_interface.prepare_command_mode_switch(start_interface,
                                                                              stop_interface),
@@ -92,7 +92,7 @@ TEST_P(
     start_interface.push_back(name + "/" + command_interface_name);
   }
 
-  stop_interface = {"fr3_joint1/" + command_interface_name};
+  stop_interface = {"fr3_joint1/" + k_position_controller};
 
   EXPECT_THROW(default_franka_hardware_interface.prepare_command_mode_switch(start_interface,
                                                                              stop_interface),

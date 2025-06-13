@@ -266,6 +266,19 @@ CallbackReturn FrankaHardwareInterface::on_init(const hardware_interface::Hardwa
     return CallbackReturn::ERROR;
   }
 
+  // Build set of exported command interfaces for direct lookup
+  exported_command_interfaces_.clear();
+  for (const auto& joint : info.joints) {
+    for (const auto& cmd_interface : joint.command_interfaces) {
+      exported_command_interfaces_.insert(joint.name + "/" + cmd_interface.name);
+    }
+  }
+  for (const auto& gpio : info.gpios) {
+    for (const auto& cmd_interface : gpio.command_interfaces) {
+      exported_command_interfaces_.insert(gpio.name + "/" + cmd_interface.name);
+    }
+  }
+
   try {
     auto version_str = info_.hardware_parameters.at(kVersionName);
     auto [major, minor, patch] = parseVersion(version_str);
@@ -421,12 +434,16 @@ hardware_interface::return_type FrankaHardwareInterface::perform_command_mode_sw
 hardware_interface::return_type FrankaHardwareInterface::prepare_command_mode_switch(
     const std::vector<std::string>& start_interfaces,
     const std::vector<std::string>& stop_interfaces) {
-  auto contains_interface_type = [](const std::string& interface,
-                                    const std::string& interface_type) {
-    size_t slash_position = interface.find('/');
-    if (slash_position != std::string::npos && slash_position + 1 < interface.size()) {
-      std::string after_slash = interface.substr(slash_position + 1);
-      return after_slash == interface_type;
+  auto contains_interface_type = [this](const std::string& interface,
+                                        const std::string& interface_type) {
+    // Check if we export this exact interface AND it matches the requested type
+    if (exported_command_interfaces_.count(interface) > 0) {
+      // Verify the interface type matches
+      size_t slash_pos = interface.find('/');
+      if (slash_pos != std::string::npos && slash_pos + 1 < interface.size()) {
+        std::string actual_type = interface.substr(slash_pos + 1);
+        return actual_type == interface_type;
+      }
     }
     return false;
   };

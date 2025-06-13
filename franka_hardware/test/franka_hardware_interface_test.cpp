@@ -253,7 +253,7 @@ TEST_P(FrankaHardwareInterfaceTest,
   std::vector<std::string> stop_interface;
 
   for (size_t i = 0; i < default_hardware_info.joints.size(); i++) {
-    const std::string joint_name = k_joint_name + std::to_string(i);
+    const std::string joint_name = k_arm_id + "_" + k_joint_name + std::to_string(i + 1);
     stop_interface.push_back(joint_name + "/" + command_interface);
   }
   std::vector<std::string> start_interface = {};
@@ -270,7 +270,7 @@ TEST_P(
   std::vector<std::string> stop_interface;
 
   for (size_t i = 0; i < default_hardware_info.joints.size(); i++) {
-    const std::string joint_name = k_joint_name + std::to_string(i);
+    const std::string joint_name = k_arm_id + "_" + k_joint_name + std::to_string(i + 1);
     stop_interface.push_back(joint_name + "/" + command_interface);
   }
   std::vector<std::string> start_interface = {"fr3_joint1/effort"};
@@ -286,7 +286,7 @@ TEST_P(FrankaHardwareInterfaceTest,
   std::vector<std::string> start_interface;
 
   for (size_t i = 0; i < default_hardware_info.joints.size(); i++) {
-    const std::string joint_name = k_joint_name + std::to_string(i);
+    const std::string joint_name = k_arm_id + "_" + k_joint_name + std::to_string(i + 1);
     start_interface.push_back(joint_name + "/" + command_interface);
   }
 
@@ -305,7 +305,7 @@ TEST_P(
   std::vector<std::string> start_interface, stop_interface;
 
   for (size_t i = 0; i < default_hardware_info.joints.size(); i++) {
-    const std::string joint_name = k_joint_name + std::to_string(i);
+    const std::string joint_name = k_arm_id + "_" + k_joint_name + std::to_string(i + 1);
     stop_interface.push_back(joint_name + "/" + command_interface);
   }
 
@@ -324,7 +324,7 @@ TEST_P(FrankaHardwareInterfaceTest, whenWriteCalled_expectOk) {
   std::vector<std::string> start_interface;
 
   for (size_t i = 0; i < default_hardware_info.joints.size(); i++) {
-    const std::string joint_name = k_joint_name + std::to_string(i);
+    const std::string joint_name = k_arm_id + "_" + k_joint_name + std::to_string(i + 1);
     start_interface.push_back(joint_name + "/" + command_interface);
   }
 
@@ -359,7 +359,7 @@ TEST_F(FrankaHardwareInterfaceTest, whenWriteCalledWithInifiteCommand_expectErro
   std::vector<std::string> start_interface;
 
   for (size_t i = 0; i < default_hardware_info.joints.size(); i++) {
-    const std::string joint_name = k_joint_name + std::to_string(i);
+    const std::string joint_name = k_arm_id + "_" + k_joint_name + std::to_string(i + 1);
     start_interface.push_back(joint_name + "/" + k_position_controller);
   }
 
@@ -390,7 +390,7 @@ TEST_F(
   std::vector<std::string> start_interface;
 
   for (size_t i = 0; i < default_hardware_info.joints.size(); i++) {
-    const std::string joint_name = k_joint_name + std::to_string(i);
+    const std::string joint_name = k_arm_id + "_" + k_joint_name + std::to_string(i + 1);
     start_interface.push_back(joint_name + "/" + k_position_controller);
   }
 
@@ -446,7 +446,7 @@ TEST_P(FrankaHardwareInterfaceTest,
   std::vector<std::string> start_interface;
 
   for (size_t i = 0; i < default_hardware_info.joints.size(); i++) {
-    const std::string joint_name = k_joint_name + std::to_string(i);
+    const std::string joint_name = k_arm_id + "_" + k_joint_name + std::to_string(i + 1);
     start_interface.push_back(joint_name + "/" + command_interface);
   }
 
@@ -470,7 +470,7 @@ TEST_P(FrankaHardwareInterfaceTest,
   std::vector<std::string> start_interface;
 
   for (size_t i = 0; i < default_hardware_info.joints.size(); i++) {
-    const std::string joint_name = k_joint_name + std::to_string(i);
+    const std::string joint_name = k_arm_id + "_" + k_joint_name + std::to_string(i + 1);
     start_interface.push_back(joint_name + "/" + command_interface);
   }
 
@@ -485,7 +485,7 @@ TEST_P(FrankaHardwareInterfaceTest,
             hardware_interface::return_type::OK);
 
   for (size_t i = 0; i < default_hardware_info.joints.size(); i++) {
-    const std::string joint_name = k_joint_name + std::to_string(i);
+    const std::string joint_name = k_arm_id + "_" + k_joint_name + std::to_string(i + 1);
     stop_interface.push_back(joint_name + "/" + command_interface);
   }
 
@@ -712,6 +712,45 @@ TEST_F(FrankaHardwareInterfaceTest, set_full_collision_behavior_throws_error) {
       response);
   ASSERT_FALSE(response.success);
   ASSERT_EQ(response.error, "network exception error");
+}
+
+// Tests for eager claiming bug fix - these would fail before the fix
+TEST_F(FrankaHardwareInterfaceTest,
+       when_prepare_command_mode_with_mixed_hardware_interfaces_only_claims_own_interfaces) {
+  // This test demonstrates the fix for the eager claiming bug
+  // Previously, Franka would claim ANY interface ending with "position"
+  // Now it only claims interfaces that it actually exports
+  std::vector<std::string> mixed_interfaces = {
+      // Franka interfaces (should be claimed)
+      arm_id + "_joint1/position", arm_id + "_joint2/position", arm_id + "_joint3/position",
+      arm_id + "_joint4/position", arm_id + "_joint5/position", arm_id + "_joint6/position",
+      arm_id + "_joint7/position",
+
+      // Gripper interfaces (should NOT be claimed by Franka)
+      "gripper_finger1/position", "gripper_finger2/position",
+
+      // External sensor interfaces (should NOT be claimed by Franka)
+      "force_sensor/force", "external_joint/position"};
+
+  std::vector<std::string> empty_interfaces = {};
+
+  ASSERT_EQ(default_franka_hardware_interface.prepare_command_mode_switch(mixed_interfaces,
+                                                                          empty_interfaces),
+            hardware_interface::return_type::OK);
+}
+
+TEST_F(FrankaHardwareInterfaceTest,
+       when_prepare_command_mode_with_foreign_interfaces_expect_ignore) {
+  // Test that Franka completely ignores interfaces from other hardware
+  std::vector<std::string> only_gripper_interfaces = {
+      "gripper_finger1/position", "gripper_finger2/position", "gripper_finger1/velocity",
+      "gripper_finger2/velocity"};
+
+  std::vector<std::string> empty_interfaces = {};
+
+  ASSERT_EQ(default_franka_hardware_interface.prepare_command_mode_switch(only_gripper_interfaces,
+                                                                          empty_interfaces),
+            hardware_interface::return_type::OK);
 }
 
 int main(int argc, char** argv) {
