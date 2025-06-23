@@ -319,7 +319,7 @@ CallbackReturn FrankaHardwareInterface::on_init(const hardware_interface::Hardwa
                 "Deprecation Warning: In the next release, 'arm_id' should be set in the URDF. "
                 "Using 'panda' as default 'arm_id' will not be supported."
                 "Please use the latest franka_description package from: "
-                "https://github.com/frankaemika/franka_description");
+                "https://github.com/frankarobotics/franka_description");
   }
 
   if (!robot_) {
