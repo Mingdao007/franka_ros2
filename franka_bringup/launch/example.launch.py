@@ -93,7 +93,6 @@ def generate_robot_nodes(context):
                     'load_gripper': str(config['load_gripper']),
                     'use_fake_hardware': str(config['use_fake_hardware']),
                     'fake_sensor_commands': str(config['fake_sensor_commands']),
-                    'joint_sources': ','.join(config['joint_sources']),
                     'joint_state_rate': str(config['joint_state_rate']),
                 }.items(),
             )
