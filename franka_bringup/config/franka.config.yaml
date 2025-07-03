@@ -9,10 +9,9 @@
 # Ensure each robot has a unique namespace to prevent topic conflicts.
 
 ROBOT1: # Arbitrary identifier for the first robot (a Mnemonic) 
-  arm_id: "" # Reserved for future use, unique arm (i.e. robot model) identifier
+  arm_id: "fr3" # Reserved for future use, unique arm (i.e. robot model) identifier
   arm_prefix: "" # Reserved for future use (e.g., robot unique prefix)
   fake_sensor_commands: "false" # Enable fake sensor commands for simulation
-  joint_sources: ["joint_states", "franka_gripper/joint_states"] # List of joint state topics
   joint_state_rate: 30 # Publishing rate for joint states (Hz)
   load_gripper: "false" # Enable Franka Gripper ("true" or "false")
   namespace: "NS_1" # Namespace for robot, any string (empty string allowed - meaningful names recommended)
@@ -25,7 +24,6 @@ ROBOT1: # Arbitrary identifier for the first robot (a Mnemonic)
 #   arm_id: ""
 #   arm_prefix: ""
 #   fake_sensor_commands: "false"
-#   joint_sources: ["joint_states", "franka_gripper/joint_states"]
 #   joint_state_rate: 30 
 #   load_gripper: "false"
 #   namespace: "NS_2"
@@ -37,7 +35,6 @@ ROBOT1: # Arbitrary identifier for the first robot (a Mnemonic)
 #   arm_id: ""
 #   arm_prefix: ""
 #   fake_sensor_commands: "false"
-#   joint_sources: ["joint_states", "franka_gripper/joint_states"]
 #   joint_state_rate: 30
 #   load_gripper: "false"
 #   namespace: "NS_3"

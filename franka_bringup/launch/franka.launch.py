@@ -22,7 +22,6 @@
 # load_gripper: Use Franka Gripper as an end-effector (default: 'false')
 # use_fake_hardware: Use fake hardware (default: 'false')
 # fake_sensor_commands: Fake sensor commands (default: 'false')
-# joint_sources: list of joint state topics (default: 'joint_states,franka_gripper/joint_states')
 # joint_state_rate: Rate for joint state publishing in Hz (default: '30')
 #
 # The franka.launch.py launch file provides a robust and flexible interface
@@ -60,7 +59,7 @@
 # which will, by default, rely upon franka.config.yaml for robot-specific parameters.
 # RViz is not launched by this script but can be included by higher-level launch files
 # if use_rviz is enabled. Ensure urdf_file parameter (a xacro file) exists in
-# franka_description/robots and  joint_sources contains valid topics to avoid runtime errors.
+# franka_description/robots to avoid runtime errors.
 #
 # This approach improves upon earlier launch scripts, which often lacked namespace
 # support and were less modular, offering a more consistent and maintainable solution.
@@ -109,8 +108,7 @@ def generate_robot_nodes(context):
         FindPackageShare('franka_bringup'), 'config', "controllers.yaml"
     ]).perform(context)
 
-    joint_sources_str = LaunchConfiguration('joint_sources').perform(context)
-    joint_sources = joint_sources_str.split(',')
+    joint_state_publisher_sources = ['franka/joint_states', 'franka_gripper/joint_states']
     joint_state_rate = int(LaunchConfiguration('joint_state_rate').perform(context))
 
     nodes = [
@@ -129,6 +127,7 @@ def generate_robot_nodes(context):
                 controllers_yaml,
                 {'robot_description': robot_description},
                 {'load_gripper': load_gripper}],
+            remappings=[('joint_states', joint_state_publisher_sources[0])],
             output='screen',
             on_exit=Shutdown(),
         ),
@@ -138,7 +137,7 @@ def generate_robot_nodes(context):
             name='joint_state_publisher',
             namespace=namespace,
             parameters=[{
-                'joints': joint_sources,
+                'source_list': joint_state_publisher_sources,
                 'rate': joint_state_rate,
                 'use_robot_description': False,
             }],
@@ -204,9 +203,6 @@ def generate_launch_description():
         DeclareLaunchArgument('fake_sensor_commands',
                               default_value='false',
                               description='Fake sensor commands'),
-        DeclareLaunchArgument('joint_sources',
-                              default_value='joint_states,franka_gripper/joint_states',
-                              description='Comma-separated list of joint state topics'),
         DeclareLaunchArgument('joint_state_rate',
                               default_value='30',
                               description='Rate for joint state publishing (Hz)'),
