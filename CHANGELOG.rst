@@ -1,7 +1,7 @@
 Changelog for package franka_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Unreleased
+v2.0.2 (2025-07-09)
 -------------------
 Requires libfranka >= 0.15.0 and franka_description >= 1.0.0 requires ROS 2 Humble
 
