@@ -41,7 +41,7 @@ Robot::Robot(const std::string& robot_ip, const rclcpp::Logger& logger) {
                 "You are not using a real-time kernel.\n"
                 "Using a real-time kernel is strongly recommended!\n"
                 "Information about how to set up a real-time kernel can be found here:\n"
-                "https://frankaemika.github.io/docs/"
+                "https://frankarobotics.github.io/docs/"
                 "installation_linux.html#setting-up-the-real-time-kernel\n");
   }
   robot_ = std::make_unique<franka::Robot>(robot_ip, rt_config);

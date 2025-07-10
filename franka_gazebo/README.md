@@ -3,7 +3,7 @@
 **==Important Note:==**
 
 Minimum necessary `franka_description` version is 0.3.0.
-You can clone franka_description package from https://github.com/frankaemika/franka_description.
+You can clone franka_description package from https://github.com/frankarobotics/franka_description.
 
 A project integrating Franka ROS 2 with the Gazebo simulator.
 
@@ -43,7 +43,7 @@ Now you can launch the velocity example with Gazebo simulator.
 ros2 launch franka_gazebo_bringup gazebo_joint_velocity_controller_example.launch.py load_gripper:=true franka_hand:='franka_hand'
 ```
 
-Keep in mind that the gripper joint has a bug with the joint velocity controller. 
+Keep in mind that the gripper joint has a bug with the joint velocity controller.
 If you are interested in controlling the gripper please use joint position interface.
 
 
