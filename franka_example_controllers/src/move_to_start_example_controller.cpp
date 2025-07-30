@@ -71,12 +71,13 @@ controller_interface::return_type MoveToStartExampleController::update(
 }
 
 CallbackReturn MoveToStartExampleController::on_init() {
-  q_goal_ << 0, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4;
   try {
     auto_declare<bool>("process_finished", false);
     auto_declare<std::string>("arm_id", "fr3");
     auto_declare<std::vector<double>>("k_gains", {});
     auto_declare<std::vector<double>>("d_gains", {});
+    auto_declare<std::vector<double>>("start_joint_configuration",
+                                      {0.0, -M_PI_4, 0.0, -3.0 * M_PI_4, 0.0, M_PI_2, M_PI_4});
   } catch (const std::exception& e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return CallbackReturn::ERROR;
@@ -89,6 +90,13 @@ CallbackReturn MoveToStartExampleController::on_configure(
   arm_id_ = get_node()->get_parameter("arm_id").as_string();
   auto k_gains = get_node()->get_parameter("k_gains").as_double_array();
   auto d_gains = get_node()->get_parameter("d_gains").as_double_array();
+
+  auto start_joint_configuration_vector =
+      get_node()->get_parameter("start_joint_configuration").as_double_array();
+
+  Eigen::Map<Eigen::VectorXd>(q_goal_.data(), num_joints) =
+      Eigen::Map<Eigen::VectorXd>(start_joint_configuration_vector.data(), num_joints);
+
   if (k_gains.empty()) {
     RCLCPP_FATAL(get_node()->get_logger(), "k_gains parameter not set");
     return CallbackReturn::FAILURE;
