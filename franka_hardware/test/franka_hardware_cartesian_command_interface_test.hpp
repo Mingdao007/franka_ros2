@@ -17,6 +17,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <tuple>
 
+#include <franka_hardware_mocks/franka_hardware_robot_mock.hpp>
 #include <hardware_interface/component_parser.hpp>
 #include <hardware_interface/hardware_info.hpp>
 #include <hardware_interface/types/hardware_interface_return_values.hpp>

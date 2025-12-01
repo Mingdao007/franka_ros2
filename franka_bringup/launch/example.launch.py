@@ -115,7 +115,7 @@ def generate_robot_nodes(context):
         )
         if controller_names_vector:
             if len(controller_names_vector) == len(configs):
-
+                controller_name = controller_names_vector[index]
             else:
                 print(
                     'Warning: Number of controller names does not match number of robot configs.'

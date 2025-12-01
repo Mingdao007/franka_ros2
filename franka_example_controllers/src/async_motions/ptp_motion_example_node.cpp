@@ -21,14 +21,16 @@
 
 using namespace std::chrono_literals;
 
+const std::vector<double> kInitialGoalJointConfiguration_ = {-0.5, -M_PI_4, 0,     -3 * M_PI_4,
+                                                             0,    M_PI_2,  M_PI_4};
+const std::vector<double> kMaximumJointVelocities_ = std::vector<double>(7, 1.0);
+constexpr double kGoalTolerance_{0.01};
+
 namespace franka_example_controllers {
 
 PTPMotionExampleNode::PTPMotionExampleNode(const rclcpp::NodeOptions& options)
     : rclcpp::Node("ptp_motion_example", options) {
   action_name_ = "action_server/ptp_motion";
-  initial_goal_joint_configuration_ = {-0.5, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4};
-  maximum_joint_velocities_ = std::vector<double>(7, 1.0);
-  goal_tolerance_ = 0.01;
 
   client_ = rclcpp_action::create_client<franka_msgs::action::PTPMotion>(this, action_name_);
 
@@ -39,8 +41,8 @@ PTPMotionExampleNode::PTPMotionExampleNode(const rclcpp::NodeOptions& options)
 }
 
 auto PTPMotionExampleNode::handle_goal_response(
-    std::shared_ptr<rclcpp_action::ClientGoalHandle<franka_msgs::action::PTPMotion>> goal_handle)
-    -> void {
+    const std::shared_ptr<rclcpp_action::ClientGoalHandle<franka_msgs::action::PTPMotion>>&
+        goal_handle) -> void {
   if (!goal_handle) {
     RCLCPP_ERROR(get_logger(), "PTP Motion goal was rejected.");
   } else {
@@ -78,9 +80,9 @@ auto PTPMotionExampleNode::handle_result(
 void PTPMotionExampleNode::send_goal() {
   // Define the goal
   franka_msgs::action::PTPMotion::Goal goal;
-  goal.goal_joint_configuration = initial_goal_joint_configuration_;
-  goal.maximum_joint_velocities = maximum_joint_velocities_;
-  goal.goal_tolerance = goal_tolerance_;
+  goal.goal_joint_configuration = kInitialGoalJointConfiguration_;
+  goal.maximum_joint_velocities = kMaximumJointVelocities_;
+  goal.goal_tolerance = kGoalTolerance_;
 
   // Set up all callback functions for the action client
   rclcpp_action::Client<franka_msgs::action::PTPMotion>::SendGoalOptions options;
@@ -114,7 +116,7 @@ void PTPMotionExampleNode::send_goal() {
   if (!future_handle.valid()) {
     RCLCPP_ERROR(get_logger(), "Failed to send PTP Motion goal.");
   } else {
-    RCLCPP_INFO(get_logger(), "PTP Motion goal sentss.");
+    RCLCPP_INFO(get_logger(), "PTP Motion goal sents.");
   }
 
   auto goal_handle = future_handle.get();
@@ -134,9 +136,8 @@ void PTPMotionExampleNode::send_goal() {
   RCLCPP_INFO(get_logger(), "Sending new PTP Motion goals in alternating directions.");
 
   auto direction = 1;
-  auto counter = 0;
-  auto max_repetitions = 20;
-  while (counter < max_repetitions) {
+  auto max_repetitions = 20U;
+  for (size_t counter = 0; counter < max_repetitions; ++counter) {
     if (counter == max_repetitions - 1) {
       goal.goal_joint_configuration[0] = 0;
       goal.goal_joint_configuration[2] = 0;
@@ -146,15 +147,13 @@ void PTPMotionExampleNode::send_goal() {
     }
     direction *= -1;
 
-    RCLCPP_INFO(get_logger(), "Sending repeat PTP Motion goal %d.", counter + 1);
+    RCLCPP_INFO(get_logger(), "Sending repeat PTP Motion goal %ld.", counter + 1);
     future_handle = client_->async_send_goal(goal, options);
 
     while (!motion_finished.load()) {
       rclcpp::sleep_for(100ms);
     }
     motion_finished.store(false);
-
-    ++counter;
   }
 
   RCLCPP_INFO(get_logger(), "PTP Motion example completed.");

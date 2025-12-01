@@ -35,6 +35,7 @@
 #include <franka_msgs/srv/set_stiffness_frame.hpp>
 #include <franka_msgs/srv/set_tcp_frame.hpp>
 
+#include "franka_hardware_mocks/franka_hardware_robot_mock.hpp"
 #include "test_utils.hpp"
 
 #include <fstream>

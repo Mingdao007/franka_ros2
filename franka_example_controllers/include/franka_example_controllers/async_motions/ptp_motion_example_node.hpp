@@ -50,19 +50,14 @@ class PTPMotionExampleNode : public rclcpp::Node {
   rclcpp_action::Client<franka_msgs::action::PTPMotion>::SharedPtr client_;
   std::string action_name_;
 
-  // Parameters for the action call
-  std::vector<double> initial_goal_joint_configuration_;
-  std::vector<double> maximum_joint_velocities_;
-  double goal_tolerance_{};
-
   /**
    * @brief Callback function for handling goal responses for the point-to-point motion action
    *
    * @param goal_handle The goal handle for the point-to-point motion action
    */
   auto handle_goal_response(
-      std::shared_ptr<rclcpp_action::ClientGoalHandle<franka_msgs::action::PTPMotion>> goal_handle)
-      -> void;
+      const std::shared_ptr<rclcpp_action::ClientGoalHandle<franka_msgs::action::PTPMotion>>&
+          goal_handle) -> void;
 
   /**
    * @brief Callback function for handling feedback for the point-to-point motion action

@@ -5,57 +5,12 @@
 #include <franka/active_control_base.h>
 #include <franka/robot.h>
 #include "franka_hardware/robot.hpp"
+#include "franka_hardware_mocks/franka_active_control_mock.hpp"
+#include "franka_hardware_mocks/franka_model_mock.hpp"
+#include "franka_hardware_mocks/franka_robot_mock.hpp"
 #include "test_utils.hpp"
 
 #pragma once
-
-class MockActiveControl : public franka::ActiveControlBase {
- public:
-  MOCK_METHOD((std::pair<franka::RobotState, franka::Duration>), readOnce, (), (override));
-  MOCK_METHOD(void, writeOnce, (const franka::Torques&), (override));
-  MOCK_METHOD(void,
-              writeOnce,
-              (const franka::JointPositions&, const std::optional<const franka::Torques>&),
-              (override));
-  MOCK_METHOD(void,
-              writeOnce,
-              (const franka::JointVelocities&, const std::optional<const franka::Torques>&),
-              (override));
-  MOCK_METHOD(void,
-              writeOnce,
-              (const franka::CartesianPose&, const std::optional<const franka::Torques>&),
-              (override));
-  MOCK_METHOD(void,
-              writeOnce,
-              (const franka::CartesianVelocities&, const std::optional<const franka::Torques>&),
-              (override));
-  MOCK_METHOD(void, writeOnce, (const franka::JointPositions&), (override));
-  MOCK_METHOD(void, writeOnce, (const franka::JointVelocities&), (override));
-  MOCK_METHOD(void, writeOnce, (const franka::CartesianPose&), (override));
-  MOCK_METHOD(void, writeOnce, (const franka::CartesianVelocities&), (override));
-};
-
-class MockFrankaRobot : public franka::Robot {
- public:
-  MOCK_METHOD(franka::RobotState, readOnce, (), (override));
-  MOCK_METHOD(std::unique_ptr<franka::ActiveControlBase>, startTorqueControl, (), (override));
-  MOCK_METHOD(std::unique_ptr<franka::ActiveControlBase>,
-              startJointVelocityControl,
-              (const research_interface::robot::Move::ControllerMode&),
-              (override));
-  MOCK_METHOD(std::unique_ptr<franka::ActiveControlBase>,
-              startJointPositionControl,
-              (const research_interface::robot::Move::ControllerMode&),
-              (override));
-  MOCK_METHOD(std::unique_ptr<franka::ActiveControlBase>,
-              startCartesianPoseControl,
-              (const research_interface::robot::Move::ControllerMode&),
-              (override));
-  MOCK_METHOD(std::unique_ptr<franka::ActiveControlBase>,
-              startCartesianVelocityControl,
-              (const research_interface::robot::Move::ControllerMode&),
-              (override));
-};
 
 namespace franka {
 
