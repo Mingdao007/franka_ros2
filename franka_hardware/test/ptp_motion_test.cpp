@@ -83,7 +83,8 @@ class PTPMotionTests : public ::testing::Test {
     EXPECT_CALL(*mock_robot, getCurrentState()).WillRepeatedly(::testing::ReturnRef(robot_state));
     EXPECT_CALL(*mock_libfranka_robot,
                 startAsyncJointPositionControl(::testing::_, ::testing::Eq(expected_optional)))
-        .WillOnce(::testing::Return(std::move(mock_active_control)));
+        .WillOnce(::testing::Return(::testing::ByMove(
+            std::unique_ptr<franka::ActiveControlBase>(std::move(mock_active_control)))));
 
     auto command_result = ptp_motion_handler->startNewPTPMotion(
         mock_libfranka_robot, std::make_shared<franka_msgs::action::PTPMotion::Goal>(goal));
@@ -147,7 +148,8 @@ TEST_F(PTPMotionTests, givenValidGoal_whenStartNewPTPMotion_thenMotionStartsSucc
   auto expected_optional = std::optional<std::vector<double>>(maximum_joint_velocities);
   EXPECT_CALL(*mock_libfranka_robot,
               startAsyncJointPositionControl(::testing::_, ::testing::Eq(expected_optional)))
-      .WillOnce(::testing::Return(std::move(mock_active_control)));
+      .WillOnce(::testing::Return(::testing::ByMove(
+          std::unique_ptr<franka::ActiveControlBase>(std::move(mock_active_control)))));
 
   auto command_result = ptp_motion_handler->startNewPTPMotion(
       mock_libfranka_robot, std::make_shared<franka_msgs::action::PTPMotion::Goal>(goal));
