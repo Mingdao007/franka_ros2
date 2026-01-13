@@ -11,6 +11,17 @@ controller_manager:
     joint_impedance_example_controller:
       type: franka_example_controllers/JointImpedanceExampleController
 
+    move_to_start_example_controller:
+      type: franka_example_controllers/MoveToStartExampleController
+
+    direct_force_example_controller:
+      type: franka_example_controllers/DirectForceExampleController
+
+    franka_robot_state_broadcaster:
+      type: franka_robot_state_broadcaster/FrankaRobotStateBroadcaster
+      state_interfaces:
+        - robot_state
+
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
@@ -40,3 +51,65 @@ joint_impedance_example_controller:
       - 1.0
       - 1.0
       - 0.5
+
+move_to_start_example_controller:
+  ros__parameters:
+    arm_id: "fr3"
+    k_gains:
+      - 600.0
+      - 600.0
+      - 600.0
+      - 600.0
+      - 250.0
+      - 150.0
+      - 50.0
+    d_gains:
+      - 30.0
+      - 30.0
+      - 30.0
+      - 30.0
+      - 10.0
+      - 10.0
+      - 5.0
+    start_joint_configuration:
+      - 0.0
+      - -0.78539816339
+      - 0.0
+      - -2.35619449019
+      - 0.0
+      - 1.57079632679
+      - 0.78539816339
+      
+direct_force_example_controller:
+  ros__parameters:
+    arm_id: "fr3"
+    gazebo: true
+    wrench_frame_id: "world"
+    pub_decimation: 1
+
+
+    # ---- move-to-start (same meaning as move_to_start_example_controller) ----
+    speed_factor: 0.2
+    k_gains: [600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0]
+    d_gains: [30.0,  30.0,  30.0,  30.0,  10.0,  10.0,  5.0]
+    start_joint_configuration: [0.0, -0.78539816339, 0.0, -2.35619449019, 0.0, 1.57079632679, 0.78539816339]
+
+    # ---- force PID ----
+    # axis: 0..5 -> Fx,Fy,Fz,Mx,My,Mz (base frame)
+    force_axis: 0
+    force_desired: 10.0
+    kp: 0.5
+    ki: 0.0
+    kd: 0.0
+    i_limit: 50.0
+    max_command: 40.0
+
+    # usually -1 makes positive external force track positive desired force
+    command_sign: -1.0
+
+    # DLS regularization for force estimation
+    lambda: 0.001
+
+    # extra joint damping in force mode (simple safety)
+    joint_damping: [2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 0.5]
+
