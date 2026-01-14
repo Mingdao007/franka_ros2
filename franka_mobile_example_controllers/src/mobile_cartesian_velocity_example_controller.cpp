@@ -69,13 +69,13 @@ controller_interface::return_type MobileCartesianVelocityExampleController::upda
   double target_angular_acceleration_z =
       (target_angular_velocity_z - prev_angular_velocity_z_) / dt;
 
-  double prev_linear_acceleration_x_ =
+  prev_linear_acceleration_x_ =
       limit_acc(target_linear_acceleration_x, prev_linear_acceleration_x_, max_jerk_linear_,
                 max_acceleration_linear_);
-  double prev_linear_acceleration_y_ =
+  prev_linear_acceleration_y_ =
       limit_acc(target_linear_acceleration_y, prev_linear_acceleration_y_, max_jerk_linear_,
                 max_acceleration_linear_);
-  double prev_angular_acceleration_z_ =
+  prev_angular_acceleration_z_ =
       limit_acc(target_angular_acceleration_z, prev_angular_acceleration_z_, max_jerk_angular_,
                 max_acceleration_angular_);
 

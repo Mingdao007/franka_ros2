@@ -1,9 +1,9 @@
 Changelog for package franka_ros2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-UNRELEASED
+v2.2.0 (2026-01-14)
 ----------
-Requires libfranka >= 0.18.0 and franka_description >= 1.2.0 requires ROS 2 Humble
+Requires libfranka >= 0.19.0 and franka_description >= 1.2.0 requires ROS 2 Humble
 
 * Add: Added a joint-based point-to-point motion action with usage example
 * BREAKING CHANGE: arm_id replaced by robot_type and controller_name by controller_names

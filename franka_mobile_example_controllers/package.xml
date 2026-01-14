@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>franka_mobile_example_controllers</name>
-  <version>3.1.0</version>
+  <version>2.2.0</version>
   <description>franka_mobile_example_controllers provides example code for controlling Franka Robotics research mobile robots with ros2_control</description>
   <maintainer email="support@franka.de">Franka Robotics GmbH</maintainer>
   <license>Apache 2.0</license>

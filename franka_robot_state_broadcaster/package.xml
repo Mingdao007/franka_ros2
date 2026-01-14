@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>franka_robot_state_broadcaster</name>
-  <version>2.1.0</version>
+  <version>2.2.0</version>
   <description>Broadcaster to publish robot states</description>
   <maintainer email="support@franka.de">Franka Robotics GmbH</maintainer>
   <license>Apache 2.0</license>
@@ -20,6 +20,7 @@
   <depend>rcutils</depend>
   <depend>realtime_tools</depend>
   <depend>sensor_msgs</depend>
+  <depend>ros2_control_test_assets</depend>
 
   <test_depend>ament_cmake_gmock</test_depend>
   <test_depend>controller_manager</test_depend>
