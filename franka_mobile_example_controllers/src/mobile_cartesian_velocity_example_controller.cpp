@@ -19,6 +19,7 @@
 #include <exception>
 #include <string>
 
+#include "fmt/format.h"
 #include <Eigen/Eigen>
 
 namespace franka_mobile_example_controllers {
@@ -104,12 +105,14 @@ CallbackReturn MobileCartesianVelocityExampleController::on_init() {
 
 CallbackReturn MobileCartesianVelocityExampleController::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
+  std::string ns = get_node()->get_namespace();
+
   franka_cartesian_velocity_ =
       std::make_unique<franka_semantic_components::FrankaCartesianVelocityInterface>(
           franka_semantic_components::FrankaCartesianVelocityInterface(false));
 
   cmd_vel_sub_ = get_node()->create_subscription<geometry_msgs::msg::TwistStamped>(
-      "/NS_1/mobile_cartesian_velocity_controller/cmd_vel", queue_size_,
+      fmt::format("{}/mobile_cartesian_velocity_controller/cmd_vel", ns) , queue_size_,
       [this](const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
         last_cmd_vel_ = msg;
         last_cmd_time_ = 0.0;
