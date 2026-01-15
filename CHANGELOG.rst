@@ -6,6 +6,7 @@ v2.2.0 (2026-01-14)
 Requires libfranka >= 0.19.0 and franka_description >= 1.2.0 requires ROS 2 Humble
 
 * Add: Added a joint-based point-to-point motion action with usage example
+* Remove: `olvx_description_module` dependency removed
 * BREAKING CHANGE: arm_id replaced by robot_type and controller_name by controller_names
 * Feat: TMRv0.2 teleoperation example controller added
 * Feat: arm_id replaced by robot_type

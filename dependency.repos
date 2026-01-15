@@ -7,7 +7,3 @@ repositories:
     type: git
     url: https://github.com/frankarobotics/libfranka.git
     version: 0.19.0
-  olvx_descriptions_module:
-    type: git
-    url: https://github.com/olive-robotics/olvx_descriptions_module.git
-    version: main
