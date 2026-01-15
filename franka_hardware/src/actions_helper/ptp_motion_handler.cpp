@@ -14,8 +14,6 @@
 
 #include "franka_hardware/actions_helper/ptp_motion_handler.hpp"
 
-constexpr double kNonSetGoalTolerance = -1.0;
-
 namespace franka_hardware {
 
 PTPMotionHandler::PTPMotionHandler(const std::shared_ptr<Robot>& robot)
