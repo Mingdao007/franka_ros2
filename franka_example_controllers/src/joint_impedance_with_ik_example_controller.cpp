@@ -27,6 +27,9 @@ using Vector7d = Eigen::Matrix<double, 7, 1>;
 
 namespace franka_example_controllers {
 
+static constexpr std::chrono::duration<double> kTimeStep{1s};
+static constexpr std::chrono::duration<double> kMaxWaitingTime{10s};
+
 controller_interface::InterfaceConfiguration
 JointImpedanceWithIKExampleController::command_interface_configuration() const {
   controller_interface::InterfaceConfiguration config;
@@ -189,6 +192,7 @@ controller_interface::return_type JointImpedanceWithIKExampleController::update(
 }
 
 CallbackReturn JointImpedanceWithIKExampleController::on_init() {
+  auto_declare<std::string>("robot_type", "fr3");
   franka_cartesian_pose_ =
       std::make_unique<franka_semantic_components::FrankaCartesianPoseInterface>(
           franka_semantic_components::FrankaCartesianPoseInterface(k_elbow_activated_));
@@ -242,12 +246,23 @@ CallbackReturn JointImpedanceWithIKExampleController::on_configure(
       "service_server/set_full_collision_behavior");
   compute_ik_client_ = get_node()->create_client<moveit_msgs::srv::GetPositionIK>("compute_ik");
 
-  while (!compute_ik_client_->wait_for_service(1s) || !collision_client->wait_for_service(1s)) {
+  auto timer = std::chrono::duration<double>::zero();
+  while (!compute_ik_client_->wait_for_service(kTimeStep) ||
+         !collision_client->wait_for_service(kTimeStep)) {
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(get_node()->get_logger(), "Interrupted while waiting for the service. Exiting.");
       return CallbackReturn::ERROR;
     }
-    RCLCPP_INFO(get_node()->get_logger(), "service not available, waiting again...");
+    RCLCPP_INFO(get_node()->get_logger(),
+                "IK service not available, waited for %f seconds, waiting more...", timer.count());
+    timer += kTimeStep;
+    if (timer > kMaxWaitingTime) {
+      RCLCPP_FATAL(get_node()->get_logger(),
+                   "Could not connect to IK service - did you start this example with its own "
+                   "launch file?\nros2 launch franka_bringup example.launch.py "
+                   "controller_names:=joint_impedance_with_ik_example_controller ");
+      return CallbackReturn::ERROR;
+    }
   }
 
   auto request = DefaultRobotBehavior::getDefaultCollisionBehaviorRequest();

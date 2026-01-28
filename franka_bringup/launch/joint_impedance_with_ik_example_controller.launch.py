@@ -50,7 +50,7 @@ def generate_robot_nodes(context):
             ),
             launch_arguments={
                 'robot_config_file': robot_config_file,
-                'controller_name': 'joint_impedance_with_ik_example_controller',
+                'controller_names': 'joint_impedance_with_ik_example_controller',
             }.items(),
         )
     )
