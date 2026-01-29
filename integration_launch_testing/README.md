@@ -27,5 +27,5 @@ Example controllers: `joint_impedance_example_controller`, `cartesian_pose_examp
 **Run the gripper test only:**
 
 ```bash
-ros2 run integration_launch_testing test_gripper_position robot_ip:=<ROBOT_IP>
+launch_test install/integration_launch_testing/share/integration_launch_testing/test/test_franka_gripper_position.py robot_ip:=<ROBOT_IP>
 ```
