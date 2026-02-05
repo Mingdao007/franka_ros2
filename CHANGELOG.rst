@@ -8,6 +8,7 @@ Requires libfranka >= 0.19.0 and franka_description >= 2.4.0 requires ROS 2 Jazz
 * feat: integration_launch_testing: added smoke tests for the example controllers
 * fix: gripper_example_controller also works without namespace
 * fix: corrected logs in franka_hardware 
+* fix: gravity_compensation_example_controller, move_to_start_example_controller, joint_impedance_example_controller work with parametrized robot_type
 
 v2.2.0 (2026-01-14)
 ----------

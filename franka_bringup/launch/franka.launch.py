@@ -139,6 +139,7 @@ def generate_robot_nodes(context):
             parameters=[
                 controllers_yaml,
                 {'robot_description': robot_description},
+                {'robot_type': robot_type},
                 {'load_gripper': load_gripper},
             ],
             remappings=[('joint_states', joint_state_publisher_sources[0])],
@@ -171,7 +172,6 @@ def generate_robot_nodes(context):
             executable='spawner',
             namespace=namespace,
             arguments=['franka_robot_state_broadcaster'],
-            parameters=[{'robot_type': LaunchConfiguration('robot_type').perform(context)}],
             condition=UnlessCondition(LaunchConfiguration('use_fake_hardware')),
             output='screen',
         ),

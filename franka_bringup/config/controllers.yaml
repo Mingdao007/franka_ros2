@@ -88,55 +88,16 @@
         type: franka_mobile_example_controllers/MobileCartesianVelocityExampleController
 
 /**:
-  cartesian_elbow_example_controller:
-    ros__parameters:
-      robot_type: "fr3"
-
-/**:
-  cartesian_orientation_example_controller:
-    ros__parameters:
-      robot_type: "fr3"
-
-/**:
-  cartesian_pose_example_controller:
-    ros__parameters:
-      robot_type: "fr3"
-
-/**:
-  cartesian_velocity_example_controller:
-    ros__parameters:
-      robot_type: "fr3"   
-
-/**:
-  elbow_example_controller:
-    ros__parameters:
-      robot_type: "fr3"
-      joints:
-        - fr3_joint1
-        - fr3_joint2
-        - fr3_joint3
-        - fr3_joint4
-        - fr3_joint5
-        - fr3_joint6
-        - fr3_joint7
-
-/**:
   franka_robot_state_broadcaster:
     ros__parameters:
       lock_try_count: 5 # Number of attempts to acquire the lock in a single on_update()
       lock_sleep_interval: 5 # microseconds sleep between attempts
       lock_log_error: true #  Log error if lock acquisition fails - false == do not log  
       lock_update_success: false # return update OK, although lock fails (no update occurs)
-
-/**:
-  gravity_compensation_example_controller:
-    ros__parameters:
-      robot_type: "fr3"
       
 /**:
   joint_impedance_example_controller:
-    ros__parameters:
-      robot_type: "fr3"    
+    ros__parameters:  
       k_gains:
         - 24.0
         - 24.0
@@ -157,7 +118,6 @@
 /**:
   joint_impedance_with_ik_example_controller:
     ros__parameters:
-      robot_type: "fr3"
       k_gains:
         - 600.0
         - 600.0
@@ -174,39 +134,6 @@
         - 10.0
         - 10.0
         - 5.0
-
-/**:
-  joint_position_example_controller:
-    ros__parameters:
-      robot_type: "fr3"
-
-/**:
-  joint_velocity_example_controller:
-    ros__parameters:
-      robot_type: "fr3"
-
-/**:
-  joint_state_broadcaster:
-    ros__parameters:
-      robot_type: "fr3"
-      joints:
-        - fr3_joint1
-        - fr3_joint2
-        - fr3_joint3
-        - fr3_joint4
-        - fr3_joint5
-        - fr3_joint6
-        - fr3_joint7
-
-/**:
-  joint_velocity_example_controller:
-    ros__parameters:
-      robot_type: "fr3"
- 
-/**:
-  model_example_controller:
-    ros__parameters:
-      robot_type: "fr3"
 
 /**:
   move_to_start_example_controller:
