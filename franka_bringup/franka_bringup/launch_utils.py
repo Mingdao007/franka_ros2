@@ -112,34 +112,32 @@ def validate_arm_prefixes_unique(arm_prefixes_list):
         sys.exit(1)
 
 
-def get_controller_for_config(
-        controller_names_str, num_configs=1, config_index=0):
+def get_parameter_for_config(parameter_str, num_configs=1, config_index=0):
     """
-    Determine which controller to use for a given configuration.
+    Determine which parameter to use for a given configuration.
 
-    @param controller_names_str: Comma-separated string of controller names.
+    @param parameter_names_str: Comma-separated string of parameters.
     @param num_configs: Total number of robot configurations (default: 1).
     @param config_index: Index of the current configuration (default: 0).
     @return: Controller name to use for this configuration, or empty string if none.
     """
-    if not controller_names_str or not controller_names_str.strip():
+    if not parameter_str or not parameter_str.strip():
         return ''
 
-    controller_names_vector = [name.strip()
-                               for name in controller_names_str.split(',')]
+    parameter_vector = [name.strip() for name in parameter_str.split(',')]
 
-    if not controller_names_vector or not any(controller_names_vector):
+    if not parameter_vector or not any(parameter_vector):
         return ''
 
-    # If number of controllers matches number of configs, use corresponding
-    # controller
-    if len(controller_names_vector) == num_configs:
-        return controller_names_vector[config_index]
+    # If number of parameters matches number of configs, use corresponding
+    # parameter
+    if len(parameter_vector) == num_configs:
+        return parameter_vector[config_index]
     else:
-        # Otherwise, use the first controller for all configs
-        if num_configs > 1 and len(controller_names_vector) != num_configs:
+        # Otherwise, use the first parameter for all configs
+        if num_configs > 1 and len(parameter_vector) != num_configs:
             print(
-                'Warning: Number of controller names does not match number of robot configs. '
-                'Using the first controller for all robots.'
+                'Warning: Number of parameter does not match number of robot configs. '
+                'Using the first parameter for all robots.'
             )
-        return controller_names_vector[0]
+        return parameter_vector[0]

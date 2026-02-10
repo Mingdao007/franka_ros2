@@ -98,24 +98,20 @@ class ControllerServiceClient:
 
         # Create all service clients
         self._load_client = node.create_client(
-            LoadController,
-            f'{controller_manager_name}/load_controller'
+            LoadController, f'{controller_manager_name}/load_controller'
         )
         self._configure_client = node.create_client(
             ConfigureController,
-            f'{controller_manager_name}/configure_controller'
+            f'{controller_manager_name}/configure_controller',
         )
         self._switch_client = node.create_client(
-            SwitchController,
-            f'{controller_manager_name}/switch_controller'
+            SwitchController, f'{controller_manager_name}/switch_controller'
         )
         self._unload_client = node.create_client(
-            UnloadController,
-            f'{controller_manager_name}/unload_controller'
+            UnloadController, f'{controller_manager_name}/unload_controller'
         )
         self._list_client = node.create_client(
-            ListControllers,
-            f'{controller_manager_name}/list_controllers'
+            ListControllers, f'{controller_manager_name}/list_controllers'
         )
 
     def wait_for_services(self, timeout_sec: float = 10.0) -> bool:
@@ -168,7 +164,9 @@ class ControllerServiceClient:
         request.name = name
 
         future = self._load_client.call_async(request)
-        rclpy.spin_until_future_complete(self._node, future, timeout_sec=timeout_sec)
+        rclpy.spin_until_future_complete(
+            self._node, future, timeout_sec=timeout_sec
+        )
 
         if not future.done():
             self._logger.error(f'Load request for {name} did not complete')
@@ -181,7 +179,9 @@ class ControllerServiceClient:
         self._logger.info(f'Controller {name} loaded successfully')
         return True
 
-    def configure_controller(self, name: str, timeout_sec: float = 10.0) -> bool:
+    def configure_controller(
+        self, name: str, timeout_sec: float = 10.0
+    ) -> bool:
         """
         Configure a controller.
 
@@ -203,10 +203,14 @@ class ControllerServiceClient:
         request.name = name
 
         future = self._configure_client.call_async(request)
-        rclpy.spin_until_future_complete(self._node, future, timeout_sec=timeout_sec)
+        rclpy.spin_until_future_complete(
+            self._node, future, timeout_sec=timeout_sec
+        )
 
         if not future.done():
-            self._logger.error(f'Configure request for {name} did not complete')
+            self._logger.error(
+                f'Configure request for {name} did not complete'
+            )
             return False
 
         if future.result() is None or not future.result().ok:
@@ -250,7 +254,9 @@ class ControllerServiceClient:
         deactivate = deactivate or []
 
         if not activate and not deactivate:
-            self._logger.warning('switch_controllers called with no controllers to switch')
+            self._logger.warning(
+                'switch_controllers called with no controllers to switch'
+            )
             return True
 
         action_desc = []
@@ -258,20 +264,25 @@ class ControllerServiceClient:
             action_desc.append(f'activate {activate}')
         if deactivate:
             action_desc.append(f'deactivate {deactivate}')
-        self._logger.info(f'Switching controllers: {", ".join(action_desc)}...')
+        self._logger.info(
+            f'Switching controllers: {", ".join(action_desc)}...'
+        )
 
         request = SwitchController.Request()
         request.activate_controllers = activate
         request.deactivate_controllers = deactivate
         request.strictness = (
-            SwitchController.Request.STRICT if strict
+            SwitchController.Request.STRICT
+            if strict
             else SwitchController.Request.BEST_EFFORT
         )
         request.activate_asap = True
         request.timeout = _create_duration(5)
 
         future = self._switch_client.call_async(request)
-        rclpy.spin_until_future_complete(self._node, future, timeout_sec=timeout_sec)
+        rclpy.spin_until_future_complete(
+            self._node, future, timeout_sec=timeout_sec
+        )
 
         if not future.done():
             self._logger.error('Switch controller request did not complete')
@@ -312,7 +323,9 @@ class ControllerServiceClient:
         request.name = name
 
         future = self._unload_client.call_async(request)
-        rclpy.spin_until_future_complete(self._node, future, timeout_sec=timeout_sec)
+        rclpy.spin_until_future_complete(
+            self._node, future, timeout_sec=timeout_sec
+        )
 
         if not future.done():
             self._logger.warning(f'Unload request for {name} did not complete')
@@ -337,7 +350,9 @@ class ControllerServiceClient:
         """
         request = ListControllers.Request()
         future = self._list_client.call_async(request)
-        rclpy.spin_until_future_complete(self._node, future, timeout_sec=timeout_sec)
+        rclpy.spin_until_future_complete(
+            self._node, future, timeout_sec=timeout_sec
+        )
 
         if future.done() and future.result() is not None:
             return list(future.result().controller)

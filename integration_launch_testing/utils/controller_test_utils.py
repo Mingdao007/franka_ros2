@@ -24,17 +24,11 @@ This module provides common functionality for testing ROS2 controllers:
 
 import time
 
-from controller_service_client import ControllerServiceClient
-from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
-from launch_ros.actions import Node
-from launch_ros.substitutions import FindPackageShare
-from launch_testing.actions import ReadyToTest
 import rclpy
 from rclpy.node import Node as RclpyNode
 from rclpy.parameter_client import AsyncParameterClient
+
+from utils.controller_service_client import ControllerServiceClient
 
 # Controller name for moving robot to start position
 MOVE_TO_START_CONTROLLER = 'move_to_start_example_controller'
@@ -112,9 +106,7 @@ def check_process_finished_parameter(
             else:
                 return (False, False)
         except Exception as e:
-            logger.debug(
-                f'Error getting result from parameter future: {e}'
-            )
+            logger.debug(f'Error getting result from parameter future: {e}')
             return (False, False)
     except Exception as e:
         # If parameter access fails, log and return failure
@@ -159,7 +151,9 @@ def run_move_to_start_and_switch_to_target_controller(
 
     """
     logger = node.get_logger()
-    logger.info(f'Running {MOVE_TO_START_CONTROLLER} to move robot to start position...')
+    logger.info(
+        f'Running {MOVE_TO_START_CONTROLLER} to move robot to start position...'
+    )
 
     client = ControllerServiceClient(node, controller_manager_name)
     try:
@@ -197,13 +191,17 @@ def run_move_to_start_and_switch_to_target_controller(
         )
         param_service_available = False
         service_wait_start = time.time()
-        service_wait_timeout = 5.0  # Wait up to 5s for service to become available
+        service_wait_timeout = (
+            5.0  # Wait up to 5s for service to become available
+        )
 
         while time.time() - service_wait_start < service_wait_timeout:
             rclpy.spin_once(node, timeout_sec=0.1)
             if param_client.services_are_ready():
                 param_service_available = True
-                logger.info(f'Parameter service for {controller_node_name} is available')
+                logger.info(
+                    f'Parameter service for {controller_node_name} is available'
+                )
                 break
             time.sleep(0.1)
 
@@ -263,11 +261,13 @@ def run_move_to_start_and_switch_to_target_controller(
 
         # Step 5: Wait for target controller to be ready (inactive state)
         # The launch file spawns it with --inactive, so it should be in 'inactive' state
-        logger.info(f'Waiting for {target_controller} to be ready (inactive state)...')
+        logger.info(
+            f'Waiting for {target_controller} to be ready (inactive state)...'
+        )
         if not client.wait_for_controller_state(
             target_controller,
             ['inactive', 'configured'],
-            timeout_sec=wait_duration_sec
+            timeout_sec=wait_duration_sec,
         ):
             logger.error(
                 f'{target_controller} is not ready for activation. '
@@ -282,7 +282,7 @@ def run_move_to_start_and_switch_to_target_controller(
         if not client.switch_controllers(
             activate=[target_controller],
             deactivate=[MOVE_TO_START_CONTROLLER],
-            strict=False
+            strict=False,
         ):
             logger.error(f'Failed to switch to {target_controller}')
             return False
@@ -297,92 +297,8 @@ def run_move_to_start_and_switch_to_target_controller(
         client.destroy()
 
 
-def create_controller_test_launch_description(
-    controller_name: str,
-    robot_type: str = 'fr3',
-    include_ready_to_test: bool = True,
-    controller_spawner_timeout: str = '30',
-) -> tuple:
-    """
-    Create a launch description for testing a controller with real hardware.
-
-    Args
-    ----
-    controller_name : str
-        Name of the controller to spawn (e.g. 'joint_impedance_example_controller')
-    robot_type : str
-        Type of robot (default 'fr3')
-    include_ready_to_test : bool
-        If True, includes ReadyToTest. Set to False for manual ros2 launch.
-    controller_spawner_timeout : str
-        Timeout for controller spawner (default '30')
-
-    Returns
-    -------
-    tuple
-        (LaunchDescription, franka_launch, controller_spawner)
-
-    """
-    robot_ip_parameter_name = 'robot_ip'
-
-    robot_ip = LaunchConfiguration(robot_ip_parameter_name)
-
-    # Launch the franka robot with real hardware
-    franka_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            [
-                PathJoinSubstitution(
-                    [
-                        FindPackageShare('franka_bringup'),
-                        'launch',
-                        'franka.launch.py',
-                    ]
-                )
-            ]
-        ),
-        launch_arguments={
-            'robot_type': robot_type,
-            robot_ip_parameter_name: robot_ip,
-        }.items(),
-    )
-
-    # Spawn the controller
-    controller_spawner = Node(
-        package='controller_manager',
-        executable='spawner',
-        arguments=[controller_name, '--controller-manager-timeout', controller_spawner_timeout],
-        parameters=[
-            PathJoinSubstitution(
-                [
-                    FindPackageShare('franka_bringup'),
-                    'config',
-                    'controllers.yaml',
-                ]
-            )
-        ],
-        output='screen',
-    )
-
-    launch_actions = [
-        DeclareLaunchArgument(
-            robot_ip_parameter_name,
-            default_value='172.16.0.2',
-            description='Hostname or IP address of the robot.',
-        ),
-        franka_launch,
-        controller_spawner,
-    ]
-
-    if include_ready_to_test:
-        launch_actions.append(ReadyToTest())
-
-    return LaunchDescription(launch_actions), franka_launch, controller_spawner
-
-
 def run_controller_smoke_test(
-    test_case,
-    controller_name: str,
-    test_duration_sec: float = 10.0
+    test_case, controller_name: str, test_duration_sec: float = 10.0
 ):
     """
     Run a simple smoke test for a controller.
@@ -414,4 +330,6 @@ def run_controller_smoke_test(
         time.sleep(0.1)
 
     elapsed = time.time() - start_time
-    logger.info(f'Controller {controller_name} ran successfully for {elapsed:.1f}s')
+    logger.info(
+        f'Controller {controller_name} ran successfully for {elapsed:.1f}s'
+    )

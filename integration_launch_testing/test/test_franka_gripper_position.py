@@ -16,14 +16,13 @@
 import time
 import unittest
 
-from franka_msgs.action import Move  # type: ignore
+from franka_msgs.action import Move
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 from launch_testing.actions import ReadyToTest
-
 import rclpy
 from rclpy.action import ActionClient
 import sensor_msgs.msg
@@ -59,8 +58,7 @@ def generate_test_description():
             [
                 DeclareLaunchArgument(
                     robot_ip_parameter_name,
-                    default_value='172.16.0.2',
-                    description='Hostname or IP address of the robot.',
+                    description='Hostname or IP address of the robot (required).',
                 ),
                 franka_gripper_description,
                 # Start test right away, no need to wait for anything
@@ -93,9 +91,7 @@ class TestStartJointPositions(unittest.TestCase):
     def tearDown(self):
         self.link_node.destroy_node()
 
-    def test_gripper_position(
-        self, launch_service, franka_gripper, proc_output
-    ):
+    def test_gripper_position(self):
         # max gripper width 0.08m
         self.gripper_positions_goal = [0.02, 0.05, 0.08]
         self.gripper_position = None

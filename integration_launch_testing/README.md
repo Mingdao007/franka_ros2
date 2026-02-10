@@ -11,24 +11,9 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_T
 **Run all integration tests:**
 
 ```bash
-# make sure the IP in the franka.config.yaml is correct
-colcon test --packages-select integration_launch_testing
+# If you want to use an IP other than 172.16.0.2
+colcon build --packages-select integration_launch_testing --cmake-args -DROBOT_IP=<robot-ip> -DBUILD_TESTING=ON
+colcon test --packages-select integration_launch_testing --event-handlers console_direct+
+# to inspect the results
 colcon test-result --all --verbose
-ros2 run integration_launch_testing run_all_integration_tests --robot-ip <ROBOT_IP>
-```
-
-Options: `--skip-gripper`, `--timeout <SEC>`, `-v` / `--verbose`.
-
-**Run a single controller test:**
-
-```bash
-ros2 run integration_launch_testing test_controller controller_name:=<CONTROLLER_NAME> robot_ip:=<ROBOT_IP>
-```
-
-Example controllers: `joint_impedance_example_controller`, `cartesian_pose_example_controller`, `move_to_start_example_controller`, and others from `controllers.yaml`.
-
-**Run the gripper test only:**
-
-```bash
-launch_test install/integration_launch_testing/share/integration_launch_testing/test/test_franka_gripper_position.py robot_ip:=<ROBOT_IP>
 ```

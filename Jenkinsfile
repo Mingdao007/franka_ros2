@@ -166,7 +166,7 @@ pipeline {
         sh '''
           . /opt/ros/$ROS_DISTRO/setup.sh
           . install/setup.sh
-          colcon test --packages-ignore hardware_interface realtime_tools libfranka controller_manager --event-handlers console_direct+
+          colcon test --packages-ignore hardware_interface realtime_tools libfranka controller_manager integration_launch_testing --event-handlers console_direct+
           colcon test-result --verbose
         '''
       }

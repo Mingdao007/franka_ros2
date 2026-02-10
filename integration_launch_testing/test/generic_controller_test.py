@@ -13,82 +13,58 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-"""
-Generic integration test for Franka example controllers.
-
-Usage:
-    # Via launch_test
-    launch_test generic_controller_test.py controller_name:=joint_impedance_example_controller
-
-    # With RViz visualization
-    launch_test generic_controller_test.py controller_name:=joint_impedance_example_controller \
-        use_rviz:=true
-
-    # Via ros2 run
-    ros2 run integration_launch_testing generic_controller_test controller_name:=<name>
-
-Supported controllers:
-    - move_to_start_example_controller
-    - joint_position_example_controller
-    - joint_velocity_example_controller
-    - joint_impedance_example_controller
-    - cartesian_pose_example_controller
-    - cartesian_velocity_example_controller
-    - cartesian_orientation_example_controller
-    - gravity_compensation_example_controller
-"""
-
-import os
-import sys
 import unittest
 
-# Add the test directory to Python path for importing controller_test_utils
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-try:
-    from ament_index_python.packages import get_package_share_directory
-    pkg_test = get_package_share_directory('integration_launch_testing')
-    sys.path.insert(0, os.path.join(pkg_test, 'test'))
-except Exception:
-    pass
+from launch import LaunchDescription
+from launch.actions import (
+    DeclareLaunchArgument,
+    IncludeLaunchDescription,
+)
+from launch.launch_description_sources import (
+    PythonLaunchDescriptionSource,
+)
+from launch.substitutions import (
+    LaunchConfiguration,
+    PathJoinSubstitution,
+)
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+import launch_testing
+import rclpy
 
-from launch import LaunchDescription  # noqa: E402
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription  # noqa: E402
-from launch.conditions import IfCondition  # noqa: E402
-from launch.launch_description_sources import PythonLaunchDescriptionSource  # noqa: E402
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution  # noqa: E402
-from launch_ros.actions import Node  # noqa: E402
-from launch_ros.substitutions import FindPackageShare  # noqa: E402
-from launch_testing.actions import ReadyToTest  # noqa: E402
+from utils.controller_test_utils import (
+    MOVE_TO_START_CONTROLLER,
+    run_controller_smoke_test,
+    run_move_to_start_and_switch_to_target_controller,
+)
 
-import rclpy  # noqa: E402, I100
+test_parameters = [
+    {
+        'name': 'joint_position_example_controller',
+        'description': 'Joint position control test',
+        'needs_move_to_start': True,
+    },
+    {
+        'name': 'cartesian_velocity_example_controller',
+        'description': 'Cartesian velocity control test',
+        'needs_move_to_start': True,
+    },
+    {
+        'name': 'cartesian_orientation_example_controller',
+        'description': 'Cartesian orientation control test',
+        'needs_move_to_start': True,
+    },
+]
 
 
-# Default controller name - can be overridden via launch argument
-DEFAULT_CONTROLLER_NAME = 'joint_impedance_example_controller'
+@launch_testing.parametrize('test_parameter', test_parameters)
+def generate_test_description(test_parameter):
+    """Generate the test launch description."""
+    controller_name = test_parameter['name']
+    needs_move_to_start = test_parameter['needs_move_to_start']
 
-# Get controller name from environment or use default
-# This allows the test to be configured before generate_test_description is called
-CONTROLLER_NAME = os.environ.get('CONTROLLER_NAME', DEFAULT_CONTROLLER_NAME)
-
-# Check if we need to run move_to_start first (from environment variable)
-# If true, we spawn the target controller in inactive mode so we can run move_to_start first
-NEEDS_MOVE_TO_START = os.environ.get('NEEDS_MOVE_TO_START', 'false').lower() == 'true'
-
-
-def generate_test_description():
-    """
-    Generate the test launch description.
-
-    The controller name can be specified via:
-    - Environment variable CONTROLLER_NAME
-    - Launch argument controller_name:=<name>
-
-    RViz can be enabled with use_rviz:=true
-    """
     robot_ip_parameter_name = 'robot_ip'
     robot_ip = LaunchConfiguration(robot_ip_parameter_name)
-    controller_name = LaunchConfiguration('controller_name')
-    use_rviz = LaunchConfiguration('use_rviz')
 
     # Launch the franka robot with real hardware
     franka_launch = IncludeLaunchDescription(
@@ -114,7 +90,10 @@ def generate_test_description():
     # If NEEDS_MOVE_TO_START is true, spawn in inactive mode so we can run move_to_start first
     # The test code will then activate this controller after move_to_start completes
     spawner_args = [controller_name, '--controller-manager-timeout', '30']
-    if NEEDS_MOVE_TO_START and CONTROLLER_NAME != 'move_to_start_example_controller':
+    if (
+        needs_move_to_start
+        and controller_name != 'move_to_start_example_controller'
+    ):
         spawner_args.append('--inactive')
 
     controller_spawner = Node(
@@ -133,52 +112,21 @@ def generate_test_description():
         output='screen',
     )
 
-    # RViz for visualization (optional)
-    rviz_node = Node(
-        package='rviz2',
-        executable='rviz2',
-        name='rviz2',
-        arguments=[
-            '--display-config',
-            PathJoinSubstitution(
-                [
-                    FindPackageShare('franka_description'),
-                    'rviz',
-                    'visualize_franka.rviz',
-                ]
-            ),
-        ],
-        output='screen',
-        condition=IfCondition(use_rviz),
-    )
-
     return (
         LaunchDescription(
             [
                 DeclareLaunchArgument(
                     robot_ip_parameter_name,
-                    default_value='172.16.0.2',
-                    description='Hostname or IP address of the robot.',
-                ),
-                DeclareLaunchArgument(
-                    'controller_name',
-                    default_value=CONTROLLER_NAME,
-                    description='Name of the controller to test.',
-                ),
-                DeclareLaunchArgument(
-                    'use_rviz',
-                    default_value='false',
-                    description='Launch RViz for visualization.',
+                    description='Hostname or IP address of the robot (required).',
                 ),
                 franka_launch,
                 controller_spawner,
-                rviz_node,
-                ReadyToTest(),
+                launch_testing.actions.ReadyToTest(),
             ]
         ),
         {
-            'franka_launch': franka_launch,
-            'controller_spawner': controller_spawner,
+            'controller_name': controller_name,
+            'needs_move_to_start': needs_move_to_start,
         },
     )
 
@@ -204,7 +152,7 @@ class TestGenericController(unittest.TestCase):
         """Destroy the test node."""
         self.link_node.destroy_node()
 
-    def test_controller(self):
+    def test_controller(self, controller_name, needs_move_to_start):
         """
         Test that the controller runs successfully.
 
@@ -216,30 +164,18 @@ class TestGenericController(unittest.TestCase):
         move_to_start_example_controller will be run first to ensure the robot
         starts from a known position.
         """
-        # Get the controller name from environment
-        controller_name = os.environ.get('CONTROLLER_NAME', DEFAULT_CONTROLLER_NAME)
-
-        # Check if we need to run move_to_start first
-        # This is determined by the NEEDS_MOVE_TO_START environment variable
-        needs_move_to_start = os.environ.get('NEEDS_MOVE_TO_START', 'false').lower() == 'true'
-
-        # Import the helper functions
-        from controller_test_utils import (  # noqa: E402
-            run_controller_smoke_test,
-            run_move_to_start_and_switch_to_target_controller,
-            MOVE_TO_START_CONTROLLER,
-        )
-
         # Run move_to_start first if needed (and we're not already testing move_to_start)
         if needs_move_to_start and controller_name != MOVE_TO_START_CONTROLLER:
             self.link_node.get_logger().info(
                 f'Running {MOVE_TO_START_CONTROLLER} to move robot to start position '
                 f'before testing {controller_name}...'
             )
-            move_to_start_success = run_move_to_start_and_switch_to_target_controller(
-                self.link_node,
-                target_controller=controller_name,
-                wait_duration_sec=30.0,
+            move_to_start_success = (
+                run_move_to_start_and_switch_to_target_controller(
+                    self.link_node,
+                    target_controller=controller_name,
+                    wait_duration_sec=30.0,
+                )
             )
             self.assertTrue(
                 move_to_start_success,
@@ -265,43 +201,3 @@ class TestGenericController(unittest.TestCase):
             controller_name,
             test_duration_sec=test_duration_sec,
         )
-
-
-if __name__ == '__main__':
-    """Allow running this test directly via ros2 run or python."""
-    import argparse
-    import subprocess
-
-    parser = argparse.ArgumentParser(description='Run generic controller integration test')
-    parser.add_argument(
-        'launch_args',
-        nargs='*',
-        help='Launch args as key:=value (e.g. controller_name:=joint_impedance)',
-    )
-
-    args = parser.parse_args()
-
-    # Parse controller_name from launch args
-    controller_name = DEFAULT_CONTROLLER_NAME
-    for arg in args.launch_args:
-        if arg.startswith('controller_name:='):
-            controller_name = arg.split(':=')[1]
-            break
-
-    # Set environment variable for the test
-    os.environ['CONTROLLER_NAME'] = controller_name
-
-    # Find the test file in the share directory
-    try:
-        from ament_index_python.packages import get_package_share_directory
-        test_file = os.path.join(
-            get_package_share_directory('integration_launch_testing'),
-            'test',
-            'generic_controller_test.py'
-        )
-    except Exception:
-        test_file = os.path.abspath(__file__)
-
-    # Build command with all arguments
-    cmd = ['launch_test', test_file] + args.launch_args
-    sys.exit(subprocess.call(cmd))
