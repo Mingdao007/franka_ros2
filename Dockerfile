@@ -25,6 +25,8 @@ RUN apt-get update && \
         python3-colcon-common-extensions \
         sudo \
         vim \
+        libgtest-dev \
+        libgmock-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
