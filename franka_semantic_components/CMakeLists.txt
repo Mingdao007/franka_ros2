@@ -77,6 +77,7 @@ if(BUILD_TESTING)
     find_package(ament_cmake_clang_tidy REQUIRED)
     set(ament_cmake_clang_tidy_CONFIG_FILE ../.clang-tidy)
     ament_clang_tidy(${CMAKE_BINARY_DIR} --jobs 6)
+    set_tests_properties(clang_tidy PROPERTIES TIMEOUT 600) # override default 300s
   endif()
 
   ament_add_gmock(test_franka_robot_state test/franka_robot_state_test.cpp)
