@@ -90,6 +90,7 @@ if(BUILD_TESTING)
         find_package(ament_cmake_clang_tidy REQUIRED)
         set(ament_cmake_clang_tidy_CONFIG_FILE ../.clang-tidy)
         ament_clang_tidy(${CMAKE_BINARY_DIR} --jobs 6)
+        set_tests_properties(clang_tidy PROPERTIES TIMEOUT 600) # override default 300s
     endif()
 
     add_rostest_with_parameters_gmock(${PROJECT_NAME}_test
