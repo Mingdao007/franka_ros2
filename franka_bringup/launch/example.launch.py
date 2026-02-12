@@ -212,8 +212,9 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 'robot_ips',
-                default_value=None,
-                description='Comma-separated list of IP addresses to override in the "robot_config_file" (optional).',
+                default_value='',
+                description='Comma-separated list of IP adresses (optional).'
+                ' If provided, these will override the robot_ip values in the config file.',
             ),
             OpaqueFunction(function=generate_robot_nodes),
         ]
