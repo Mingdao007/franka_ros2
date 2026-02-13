@@ -48,7 +48,7 @@ if(BUILD_TESTING)
     add_ros_isolated_launch_test(test/test_franka_gripper_position.py)
     add_ros_isolated_launch_test(test/generic_controller_test.py)
 
-    ament_python_install_package(utils)
+    ament_python_install_package(${PROJECT_NAME})
 
     install(
       DIRECTORY config

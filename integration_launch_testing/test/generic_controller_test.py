@@ -15,6 +15,11 @@
 
 import unittest
 
+from integration_launch_testing.controller_test_utils import (
+    MOVE_TO_START_CONTROLLER,
+    run_controller_smoke_test,
+    run_move_to_start_and_switch_to_target_controller,
+)
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
@@ -32,11 +37,6 @@ from launch_ros.substitutions import FindPackageShare
 import launch_testing
 import rclpy
 
-from utils.controller_test_utils import (
-    MOVE_TO_START_CONTROLLER,
-    run_controller_smoke_test,
-    run_move_to_start_and_switch_to_target_controller,
-)
 
 test_parameters = [
     {

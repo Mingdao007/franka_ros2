@@ -24,12 +24,14 @@ This module provides common functionality for testing ROS2 controllers:
 
 import time
 
+from integration_launch_testing.controller_service_client import (
+    ControllerServiceClient,
+)
 from rcl_interfaces.srv import GetParameters
 import rclpy
 from rclpy.node import Node as RclpyNode
 from rclpy.task import Future
 
-from utils.controller_service_client import ControllerServiceClient
 
 # Controller name for moving robot to start position
 MOVE_TO_START_CONTROLLER = 'move_to_start_example_controller'
