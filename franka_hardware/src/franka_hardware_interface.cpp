@@ -94,27 +94,28 @@ std::vector<StateInterface> FrankaHardwareInterface::export_state_interfaces() {
   }
 
   state_interfaces.emplace_back(StateInterface(
-      robot_type_, k_robot_state_interface_name,
+      prefix_ + robot_type_, k_robot_state_interface_name,
       reinterpret_cast<double*>(  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
           &hw_franka_robot_state_addr_)));
   state_interfaces.emplace_back(StateInterface(
-      robot_type_, k_robot_model_interface_name,
+      prefix_ + robot_type_, k_robot_model_interface_name,
       reinterpret_cast<double*>(  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
           &hw_franka_model_ptr_)));
 
   // cartesian pose state interface 16 element pose matrix
   for (auto i = 0U; i < 16; i++) {
-    state_interfaces.emplace_back(StateInterface(std::to_string(i), k_HW_IF_CARTESIAN_POSE_STATE,
-                                                 &cartesian_pose_state_.at(i)));
+    state_interfaces.emplace_back(StateInterface(
+        prefix_ + std::to_string(i), k_HW_IF_CARTESIAN_POSE_STATE, &cartesian_pose_state_.at(i)));
   }
 
   // elbow state interface
   for (auto i = 0U; i < elbow_state_names_.size(); i++) {
-    state_interfaces.emplace_back(
-        StateInterface(elbow_state_names_.at(i), k_HW_IF_ELBOW_STATE, &elbow_state_.at(i)));
+    state_interfaces.emplace_back(StateInterface(prefix_ + elbow_state_names_.at(i),
+                                                 k_HW_IF_ELBOW_STATE, &elbow_state_.at(i)));
   }
 
-  state_interfaces.emplace_back(StateInterface(robot_type_, "robot_time", &robot_time_state_));
+  state_interfaces.emplace_back(
+      StateInterface(prefix_ + robot_type_, "robot_time", &robot_time_state_));
 
   return state_interfaces;
 }
@@ -311,6 +312,13 @@ CallbackReturn FrankaHardwareInterface::on_init(const hardware_interface::Hardwa
                 "Using 'panda' as default 'robot_type' will not be supported."
                 "Please use the latest franka_description package from: "
                 "https://github.com/frankarobotics/franka_description");
+  }
+
+  try {
+    prefix_ = info_.hardware_parameters.at("prefix");
+  } catch (const std::out_of_range& ex) {
+    RCLCPP_INFO(getLogger(), "Parameter 'prefix' is not set. Using empty prefix.");
+    prefix_ = "";
   }
 
   if (!robot_) {

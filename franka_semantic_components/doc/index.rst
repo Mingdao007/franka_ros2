@@ -17,12 +17,18 @@ Cartesian Pose Interface
 This interface is used to send Cartesian pose commands to the robot by using the loaned command interfaces.
 FrankaSemanticComponentInterface class is handling the loaned command interfaces and state interfaces.
 While starting the cartesian pose interface, the user needs to pass a boolean flag to the constructor
-to indicate whether the interface is for the elbow or not.
+to indicate whether the interface is for the elbow or not. If the robot is using an arm_prefix, 
+the prefix should also be passed to the constructor.
 
 .. code-block:: cpp
 
    auto is_elbow_active = false;
-   CartesianPoseInterface cartesian_pose_interface(is_elbow_active);
+   // Standard initialization
+    CartesianPoseInterface cartesian_pose_interface(is_elbow_active);
+
+    // Initialization with an arm prefix
+    std::string arm_prefix = "arm_1";
+    CartesianPoseInterface prefixed_interface(arm_prefix, is_elbow_active);
 
 This interface allows users to read the current pose command interface values set by the franka hardware interface.
 
@@ -74,7 +80,12 @@ FrankaSemanticComponentInterface class is handling the loaned command interfaces
 .. code-block:: cpp
 
     auto is_elbow_active = false;
-    CartesianVelocityInterface cartesian_velocity_interface(is_elbow_active);
+    // Standard initialization
+    CartesianVelocityInterface cartesian_pose_interface(is_elbow_active);
+
+    // Initialization with an arm prefix
+    std::string arm_prefix = "arm_1";
+    CartesianVelocityInterface prefixed_interface(arm_prefix, is_elbow_active);
 
 To send the velocity command to the robot, you need to assign_loaned_command_interface in your custom controller.
 

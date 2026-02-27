@@ -42,9 +42,11 @@ class FrankaCartesianVelocityInterface : public FrankaSemanticComponentInterface
    *
    * @param[in] command_elbow_active if true to activates the elbow commanding together with the
    * cartesian velocity input, else elbow commanding is not allowed.
+   * @param[in] arm_prefix prefix prepended to the robot hardware interfaces.
    *
    */
   explicit FrankaCartesianVelocityInterface(bool command_elbow_activate);
+  FrankaCartesianVelocityInterface(const std::string& arm_prefix, bool command_elbow_active);
   FrankaCartesianVelocityInterface(const FrankaCartesianVelocityInterface&) = delete;
   FrankaCartesianVelocityInterface& operator=(FrankaCartesianVelocityInterface const&) = delete;
   FrankaCartesianVelocityInterface(FrankaCartesianVelocityInterface&&) = default;

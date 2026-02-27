@@ -67,14 +67,18 @@ controller_interface::return_type CartesianVelocityExampleController::update(
 }
 
 CallbackReturn CartesianVelocityExampleController::on_init() {
+  auto_declare<std::string>("arm_prefix", "");
   return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn CartesianVelocityExampleController::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
+  arm_prefix_ = get_node()->get_parameter("arm_prefix").as_string();
+  arm_prefix_ = arm_prefix_.empty() ? "" : arm_prefix_ + "_";
   franka_cartesian_velocity_ =
       std::make_unique<franka_semantic_components::FrankaCartesianVelocityInterface>(
-          franka_semantic_components::FrankaCartesianVelocityInterface(k_elbow_activated_));
+          franka_semantic_components::FrankaCartesianVelocityInterface(arm_prefix_,
+                                                                       k_elbow_activated_));
 
   auto client = get_node()->create_client<franka_msgs::srv::SetFullCollisionBehavior>(
       "service_server/set_full_collision_behavior");

@@ -25,7 +25,7 @@ GravityCompensationExampleController::command_interface_configuration() const {
   config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
   for (int i = 1; i <= num_joints; ++i) {
-    config.names.push_back(robot_type_ + "_joint" + std::to_string(i) + "/effort");
+    config.names.push_back(arm_prefix_ + robot_type_ + "_joint" + std::to_string(i) + "/effort");
   }
   return config;
 }
@@ -47,12 +47,15 @@ controller_interface::return_type GravityCompensationExampleController::update(
 CallbackReturn GravityCompensationExampleController::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   robot_type_ = get_node()->get_parameter("robot_type").as_string();
+  arm_prefix_ = get_node()->get_parameter("arm_prefix").as_string();
+  arm_prefix_ = arm_prefix_.empty() ? "" : arm_prefix_ + "_";
   return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn GravityCompensationExampleController::on_init() {
   try {
     auto_declare<std::string>("robot_type", "fr3");
+    auto_declare<std::string>("arm_prefix", "");
   } catch (const std::exception& e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return CallbackReturn::ERROR;

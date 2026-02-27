@@ -39,9 +39,11 @@ class FrankaCartesianPoseInterface
    *
    * @param[in] command_elbow_active insert true to activate the elbow commanding together with the
    * cartesian velocity input, otherwise the elbow commanding is not allowed.
+   * @param[in] arm_prefix prefix prepended to the robot hardware interfaces.
    *
    */
   explicit FrankaCartesianPoseInterface(bool command_elbow_activate);
+  FrankaCartesianPoseInterface(const std::string& arm_prefix, bool command_elbow_active);
   FrankaCartesianPoseInterface(const FrankaCartesianPoseInterface&) = delete;
   FrankaCartesianPoseInterface& operator=(const FrankaCartesianPoseInterface& other) = delete;
   FrankaCartesianPoseInterface& operator=(FrankaCartesianPoseInterface&& other) = delete;

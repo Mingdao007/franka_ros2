@@ -47,6 +47,7 @@ class GravityCompensationExampleController : public controller_interface::Contro
 
  private:
   std::string robot_type_;
+  std::string arm_prefix_;
   const int num_joints = 7;
 };
 }  // namespace franka_example_controllers

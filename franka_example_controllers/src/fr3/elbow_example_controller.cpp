@@ -38,7 +38,7 @@ controller_interface::InterfaceConfiguration ElbowExampleController::state_inter
   config.names = franka_cartesian_velocity_->get_state_interface_names();
 
   // add the robot time interface
-  config.names.push_back(robot_type_ + "/robot_time");
+  config.names.push_back(arm_prefix_ + robot_type_ + "/robot_time");
 
   return config;
 }
@@ -77,14 +77,18 @@ controller_interface::return_type ElbowExampleController::update(
 }
 
 CallbackReturn ElbowExampleController::on_init() {
+  auto_declare<std::string>("arm_prefix", "");
   return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn ElbowExampleController::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
+  arm_prefix_ = get_node()->get_parameter("arm_prefix").as_string();
+  arm_prefix_ = arm_prefix_.empty() ? "" : arm_prefix_ + "_";
   franka_cartesian_velocity_ =
       std::make_unique<franka_semantic_components::FrankaCartesianVelocityInterface>(
-          franka_semantic_components::FrankaCartesianVelocityInterface(k_elbow_activated_));
+          franka_semantic_components::FrankaCartesianVelocityInterface(arm_prefix_,
+                                                                       k_elbow_activated_));
 
   auto client = get_node()->create_client<franka_msgs::srv::SetFullCollisionBehavior>(
       "service_server/set_full_collision_behavior");

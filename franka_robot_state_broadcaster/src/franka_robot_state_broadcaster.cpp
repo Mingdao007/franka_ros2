@@ -107,9 +107,10 @@ controller_interface::CallbackReturn FrankaRobotStateBroadcaster::on_configure(
   }
 
   if (!franka_robot_state_) {
+    std::string full_prefix = params.arm_prefix.empty() ? "" : params.arm_prefix + "_";
+    std::string hw_interface_name = full_prefix + params.robot_type + "/" + state_interface_name;
     franka_robot_state_ = std::make_unique<franka_semantic_components::FrankaRobotState>(
-        franka_semantic_components::FrankaRobotState(params.robot_type + "/" + state_interface_name,
-                                                     robot_description));
+        franka_semantic_components::FrankaRobotState(hw_interface_name, robot_description));
   }
 
   current_pose_stamped_publisher_ = this_node->create_publisher<geometry_msgs::msg::PoseStamped>(

@@ -56,7 +56,16 @@ FrankaRobotState::FrankaRobotState(const std::string& name, const std::string& r
     throw std::runtime_error("Failed to parse URDF.");
   }
 
-  robot_name_ = get_robot_name_from_urdf();
+  if (name.empty()) {
+    robot_name_ = get_robot_name_from_urdf();
+  } else {
+    size_t slash_pos = name.find('/');
+    if (slash_pos != std::string::npos) {
+      robot_name_ = name.substr(0, slash_pos);
+    } else {
+      robot_name_ = name;
+    }
+  }
   full_robot_state_interface_name_ = robot_name_ + "/" + state_interface_name_;
   interface_names_.emplace_back(full_robot_state_interface_name_);
 

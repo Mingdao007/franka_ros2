@@ -45,6 +45,7 @@ class CartesianVelocityExampleController : public controller_interface::Controll
   std::unique_ptr<franka_semantic_components::FrankaCartesianVelocityInterface>
       franka_cartesian_velocity_;
 
+  std::string arm_prefix_;
   const double k_time_max_{4.0};
   const double k_v_max_{0.05};
   const double k_angle_{M_PI / 4.0};

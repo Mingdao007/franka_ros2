@@ -234,7 +234,7 @@
     <hardware>
       <param name="version">0.1.0</param>
       <param name="robot_type">fr3</param>
-      <param name="prefix">""</param>
+      <param name="prefix"></param>
       <plugin>franka_hardware/FrankaHardwareInterface</plugin>
       <param name="robot_ip">""</param>
       <param name="arm_prefix">""</param>

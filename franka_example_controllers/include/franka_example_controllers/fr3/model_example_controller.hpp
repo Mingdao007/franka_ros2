@@ -49,6 +49,7 @@ class ModelExampleController : public controller_interface::ControllerInterface 
 
  private:
   std::string robot_type_;
+  std::string arm_prefix_;
   std::unique_ptr<franka_semantic_components::FrankaRobotModel> franka_robot_model_;
 
   const std::string k_robot_state_interface_name{"robot_state"};

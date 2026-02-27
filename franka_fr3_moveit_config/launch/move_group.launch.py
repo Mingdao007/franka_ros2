@@ -19,29 +19,33 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 import yaml
 
 
-def load_yaml(package_name, file_path):
+def load_yaml(package_name, file_path, prefix=None):
     package_path = get_package_share_directory(package_name)
     absolute_file_path = os.path.join(package_path, file_path)
     try:
         with open(absolute_file_path, 'r') as file:
-            return yaml.safe_load(file)
+            yaml_string = file.read()
+            if prefix:
+                yaml_string = yaml_string.replace('fr3', prefix + '_fr3')
+            return yaml.safe_load(yaml_string)
     except EnvironmentError:  # parent of IOError, OSError *and* Windows Error where available
         return None
 
 
-def generate_launch_description():
+def generate_robot_nodes(context, *args, **kwargs):
     robot_ip_parameter_name = 'robot_ip'
     load_gripper_parameter_name = 'load_gripper'
     use_fake_hardware_parameter_name = 'use_fake_hardware'
     fake_sensor_commands_parameter_name = 'fake_sensor_commands'
     namespace_parameter_name = 'namespace'
+    arm_prefix_parameter_name = 'arm_prefix'
 
     robot_ip = LaunchConfiguration(robot_ip_parameter_name)
     load_gripper = LaunchConfiguration(load_gripper_parameter_name)
@@ -49,10 +53,9 @@ def generate_launch_description():
     fake_sensor_commands = LaunchConfiguration(
         fake_sensor_commands_parameter_name)
     namespace = LaunchConfiguration(namespace_parameter_name)
+    arm_prefix = LaunchConfiguration(arm_prefix_parameter_name)
 
-    db_arg = DeclareLaunchArgument(
-        'db', default_value='False', description='Database flag'
-    )
+    prefix_str = arm_prefix.perform(context)
 
     franka_xacro_file = os.path.join(
         get_package_share_directory('franka_description'),
@@ -65,15 +68,12 @@ def generate_launch_description():
             ' ',
             franka_xacro_file,
             ' ros2_control:=false',
-            ' hand:=',
-            load_gripper,
+            ' hand:=', load_gripper,
             ' robot_type:=fr3',
-            ' robot_ip:=',
-            robot_ip,
-            ' use_fake_hardware:=',
-            use_fake_hardware,
-            ' fake_sensor_commands:=',
-            fake_sensor_commands,
+            ' arm_prefix:=', arm_prefix,
+            ' robot_ip:=', robot_ip,
+            ' use_fake_hardware:=', use_fake_hardware,
+            ' fake_sensor_commands:=', fake_sensor_commands,
         ]
     )
 
@@ -86,8 +86,13 @@ def generate_launch_description():
     )
 
     robot_description_semantic_command = Command(
-        [FindExecutable(name='xacro'), ' ',
-         franka_semantic_xacro_file, ' hand:=', load_gripper]
+        [
+            FindExecutable(name='xacro'),
+            ' ',
+            franka_semantic_xacro_file,
+            ' hand:=', load_gripper,
+            ' arm_prefix:=', arm_prefix,
+        ]
     )
 
     # Use ParameterValue here as well if needed
@@ -95,7 +100,7 @@ def generate_launch_description():
         robot_description_semantic_command, value_type=str)}
 
     kinematics_yaml = load_yaml(
-        'franka_fr3_moveit_config', 'config/kinematics.yaml')
+        'franka_fr3_moveit_config', 'config/kinematics.yaml', prefix_str)
 
     run_move_group_node = Node(
         package='moveit_ros_move_group',
@@ -108,9 +113,15 @@ def generate_launch_description():
         ],
     )
 
-    return LaunchDescription(
-        [
-            db_arg,
-            run_move_group_node,
-        ]
+    return [run_move_group_node]
+
+
+def generate_launch_description():
+    db_arg = DeclareLaunchArgument(
+        'db', default_value='False', description='Database flag'
     )
+
+    return LaunchDescription([
+        db_arg,
+        OpaqueFunction(function=generate_robot_nodes)
+    ])

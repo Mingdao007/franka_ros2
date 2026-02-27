@@ -89,6 +89,7 @@ def generate_robot_nodes(context):
     )
     load_gripper = load_gripper_launch_configuration.lower() == 'true'
     robot_type = LaunchConfiguration('robot_type').perform(context)
+    arm_prefix = LaunchConfiguration('arm_prefix').perform(context)
     urdf_path = PathJoinSubstitution(
         [
             FindPackageShare('franka_description'),
@@ -141,6 +142,7 @@ def generate_robot_nodes(context):
                 {'robot_description': robot_description},
                 {'robot_type': robot_type},
                 {'load_gripper': load_gripper},
+                {'arm_prefix': arm_prefix},
             ],
             remappings=[('joint_states', joint_state_publisher_sources[0])],
             output='screen',

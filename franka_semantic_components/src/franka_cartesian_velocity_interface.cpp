@@ -39,7 +39,11 @@ std::vector<double> combineArraysToVector(const Eigen::Vector3d& linear_velocity
 namespace franka_semantic_components {
 
 FrankaCartesianVelocityInterface::FrankaCartesianVelocityInterface(bool command_elbow_active)
-    : FrankaSemanticComponentInterface("cartesian_velocity_command", 0, 6),
+    : FrankaCartesianVelocityInterface("", command_elbow_active) {}
+
+FrankaCartesianVelocityInterface::FrankaCartesianVelocityInterface(const std::string& arm_prefix,
+                                                                   bool command_elbow_active)
+    : FrankaSemanticComponentInterface(arm_prefix + "cartesian_velocity_command", 0, 6),
       command_elbow_active_(command_elbow_active) {
   if (command_elbow_active_) {
     command_interface_names_.reserve(full_command_interface_size_);
@@ -50,16 +54,18 @@ FrankaCartesianVelocityInterface::FrankaCartesianVelocityInterface(bool command_
 
   for (const auto& velocity_command_name : hw_cartesian_velocities_names_) {
     auto full_interface_name =
-        velocity_command_name + "/" + cartesian_velocity_command_interface_name_;
+        arm_prefix + velocity_command_name + "/" + cartesian_velocity_command_interface_name_;
     command_interface_names_.emplace_back(full_interface_name);
   }
   if (command_elbow_active_) {
     for (const auto& elbow_command_name : hw_elbow_command_names_) {
-      auto full_elbow_command_name = elbow_command_name + "/" + elbow_command_interface_name_;
+      auto full_elbow_command_name =
+          arm_prefix + elbow_command_name + "/" + elbow_command_interface_name_;
       command_interface_names_.emplace_back(full_elbow_command_name);
     }
     for (const auto& elbow_state_name : elbow_state_names_) {
-      auto full_elbow_state_name = elbow_state_name + "/" + elbow_state_interface_name_;
+      auto full_elbow_state_name =
+          arm_prefix + elbow_state_name + "/" + elbow_state_interface_name_;
       state_interface_names_.emplace_back(full_elbow_state_name);
     }
   }

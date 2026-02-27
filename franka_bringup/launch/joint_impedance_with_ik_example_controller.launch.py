@@ -53,6 +53,7 @@ def generate_robot_nodes(context):
         use_fake_hardware = config['use_fake_hardware']
         fake_sensor_commands = config['fake_sensor_commands']
         use_rviz = config['use_rviz']
+        arm_prefix = config['arm_prefix']
 
         # Define the additional nodes
         additional_nodes.append(
@@ -75,6 +76,7 @@ def generate_robot_nodes(context):
                     'use_fake_hardware': str(use_fake_hardware),
                     'fake_sensor_commands': str(fake_sensor_commands),
                     'use_rviz': str(use_rviz),
+                    'arm_prefix': str(arm_prefix),
                 }.items(),
             ),
         )

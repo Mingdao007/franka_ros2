@@ -40,6 +40,7 @@ class JointVelocityExampleController : public controller_interface::ControllerIn
 
  private:
   std::string robot_type_;
+  std::string arm_prefix_;
   std::string robot_description_;
   bool is_gazebo{false};
   const int num_joints = 7;

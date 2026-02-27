@@ -98,6 +98,7 @@ class JointImpedanceWithIKExampleController : public controller_interface::Contr
   bool initialization_flag_{true};
 
   std::string robot_type_;
+  std::string arm_prefix_;
   bool is_gripper_loaded_ = true;
   std::string robot_description_;
 

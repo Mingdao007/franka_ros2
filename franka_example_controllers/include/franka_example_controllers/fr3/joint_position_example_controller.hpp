@@ -42,6 +42,7 @@ class JointPositionExampleController : public controller_interface::ControllerIn
 
  private:
   std::string robot_type_;
+  std::string arm_prefix_;
   bool is_gazebo_{false};
   std::string robot_description_;
   const int num_joints = 7;

@@ -31,7 +31,7 @@ JointVelocityExampleController::command_interface_configuration() const {
   config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
   for (int i = 1; i <= num_joints; ++i) {
-    config.names.push_back(robot_type_ + "_joint" + std::to_string(i) + "/velocity");
+    config.names.push_back(arm_prefix_ + robot_type_ + "_joint" + std::to_string(i) + "/velocity");
   }
   return config;
 }
@@ -41,8 +41,8 @@ JointVelocityExampleController::state_interface_configuration() const {
   controller_interface::InterfaceConfiguration config;
   config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   for (int i = 1; i <= num_joints; ++i) {
-    config.names.push_back(robot_type_ + "_joint" + std::to_string(i) + "/position");
-    config.names.push_back(robot_type_ + "_joint" + std::to_string(i) + "/velocity");
+    config.names.push_back(arm_prefix_ + robot_type_ + "_joint" + std::to_string(i) + "/position");
+    config.names.push_back(arm_prefix_ + robot_type_ + "_joint" + std::to_string(i) + "/velocity");
   }
   return config;
 }
@@ -71,6 +71,7 @@ controller_interface::return_type JointVelocityExampleController::update(
 
 CallbackReturn JointVelocityExampleController::on_init() {
   try {
+    auto_declare<std::string>("arm_prefix", "");
     auto_declare<bool>("gazebo", false);
     auto_declare<std::string>("robot_description", "");
   } catch (const std::exception& e) {
@@ -102,6 +103,8 @@ CallbackReturn JointVelocityExampleController::on_configure(
 
   robot_type_ =
       robot_utils::getRobotNameFromDescription(robot_description_, get_node()->get_logger());
+  arm_prefix_ = get_node()->get_parameter("arm_prefix").as_string();
+  arm_prefix_ = arm_prefix_.empty() ? "" : arm_prefix_ + "_";
 
   if (!is_gazebo) {
     auto client = get_node()->create_client<franka_msgs::srv::SetFullCollisionBehavior>(

@@ -36,7 +36,11 @@ std::vector<double> combineArraysToVector(const std::array<double, 16>& cartesia
 namespace franka_semantic_components {
 
 FrankaCartesianPoseInterface::FrankaCartesianPoseInterface(bool command_elbow_active)
-    : FrankaSemanticComponentInterface("cartesian_pose_command", 16, 16),
+    : FrankaCartesianPoseInterface("", command_elbow_active) {}
+
+FrankaCartesianPoseInterface::FrankaCartesianPoseInterface(const std::string& arm_prefix,
+                                                           bool command_elbow_active)
+    : FrankaSemanticComponentInterface(arm_prefix + "cartesian_pose", 16, 16),
       command_elbow_active_(command_elbow_active) {
   if (command_elbow_active_) {
     command_interface_names_.reserve(full_command_interface_size_);
@@ -46,18 +50,22 @@ FrankaCartesianPoseInterface::FrankaCartesianPoseInterface(bool command_elbow_ac
   }
 
   for (auto i = 0U; i < 16; i++) {
-    auto full_interface_name = std::to_string(i) + "/" + cartesian_pose_command_interface_name_;
-    auto state_interface_name = std::to_string(i) + "/" + cartesian_pose_state_interface_name_;
+    auto full_interface_name =
+        arm_prefix + std::to_string(i) + "/" + cartesian_pose_command_interface_name_;
+    auto state_interface_name =
+        arm_prefix + std::to_string(i) + "/" + cartesian_pose_state_interface_name_;
     command_interface_names_.emplace_back(full_interface_name);
     state_interface_names_.emplace_back(state_interface_name);
   }
   if (command_elbow_active_) {
     for (const auto& elbow_command_name : hw_elbow_names_) {
-      auto full_elbow_command_name = elbow_command_name + "/" + elbow_command_interface_name_;
+      auto full_elbow_command_name =
+          arm_prefix + elbow_command_name + "/" + elbow_command_interface_name_;
       command_interface_names_.emplace_back(full_elbow_command_name);
     }
     for (const auto& elbow_state_name : elbow_state_names_) {
-      auto full_elbow_state_name = elbow_state_name + "/" + elbow_state_interface_name_;
+      auto full_elbow_state_name =
+          arm_prefix + elbow_state_name + "/" + elbow_state_interface_name_;
       state_interface_names_.emplace_back(full_elbow_state_name);
     }
   }

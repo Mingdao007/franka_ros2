@@ -33,11 +33,18 @@ namespace franka_example_controllers {
 controller_interface::CallbackReturn ModelExampleController::on_init() {
   try {
     auto_declare("robot_type", "fr3");
+    auto_declare<std::string>("arm_prefix", "");
     if (!get_node()->get_parameter("robot_type", robot_type_)) {
       RCLCPP_FATAL(get_node()->get_logger(), "Failed to get robot_type parameter");
       get_node()->shutdown();
       return CallbackReturn::ERROR;
     }
+    if (!get_node()->get_parameter("arm_prefix", arm_prefix_)) {
+      RCLCPP_FATAL(get_node()->get_logger(), "Failed to get arm_prefix parameter");
+      get_node()->shutdown();
+      return CallbackReturn::ERROR;
+    }
+    arm_prefix_ = arm_prefix_.empty() ? "" : arm_prefix_ + "_";
   } catch (const std::exception& e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return CallbackReturn::ERROR;
@@ -65,8 +72,8 @@ controller_interface::CallbackReturn ModelExampleController::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   franka_robot_model_ = std::make_unique<franka_semantic_components::FrankaRobotModel>(
       franka_semantic_components::FrankaRobotModel(
-          robot_type_ + "/" + k_robot_model_interface_name,
-          robot_type_ + "/" + k_robot_state_interface_name));
+          arm_prefix_ + robot_type_ + "/" + k_robot_model_interface_name,
+          arm_prefix_ + robot_type_ + "/" + k_robot_state_interface_name));
 
   RCLCPP_DEBUG(get_node()->get_logger(), "configured successfully");
   return CallbackReturn::SUCCESS;

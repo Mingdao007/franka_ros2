@@ -43,6 +43,7 @@ class MoveToStartExampleController : public controller_interface::ControllerInte
 
  private:
   std::string robot_type_;
+  std::string arm_prefix_;
   const int num_joints = 7;
   Vector7d q_;
   Vector7d q_goal_;
