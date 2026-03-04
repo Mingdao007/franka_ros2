@@ -18,6 +18,12 @@
       mobile_cartesian_velocity_with_ik_example_controller:
         type: franka_example_controllers/MobileCartesianVelocityWithIkExampleController
 
+      mobile_fr3_duo_joint_impedance_example_controller:
+        type: franka_example_controllers/MobileFr3DuoJointImpedanceExampleController
+      
+      gravity_compensation_example_controller:
+        type: franka_example_controllers/GravityCompensationExampleController
+
 /**:
   joint_position_example_controller:
     ros__parameters:

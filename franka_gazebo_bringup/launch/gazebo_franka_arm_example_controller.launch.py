@@ -14,21 +14,42 @@
 
 import os
 import xacro
+import xml.dom.minidom
 
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction, ExecuteProcess, RegisterEventHandler
-from launch.event_handlers import OnProcessExit
+from launch.event_handlers import OnProcessExit, OnShutdown
 
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
 from launch import LaunchContext, LaunchDescription
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.conditions import IfCondition
 from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+
+
+def load_controller(context: LaunchContext, controller_name):
+    controller_name_str = context.perform_substitution(controller_name)
+    return [Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=[
+            controller_name_str,
+            '--controller-manager-timeout', '30',
+        ],
+        parameters=[PathJoinSubstitution([
+            FindPackageShare('franka_gazebo_bringup'),
+            'config',
+            'franka_gazebo_controllers.yaml'
+        ])],
+        output='screen',
+    )]
+
 
 
 def get_robot_description(context: LaunchContext, robot_type, load_gripper, franka_hand):
@@ -37,10 +58,8 @@ def get_robot_description(context: LaunchContext, robot_type, load_gripper, fran
     franka_hand_str = context.perform_substitution(franka_hand)
 
     franka_xacro_file = os.path.join(
-        get_package_share_directory('franka_description'),
-        'robots',
-        robot_type_str,
-        robot_type_str + '.urdf.xacro'
+        get_package_share_directory('franka_gazebo_bringup'),
+        'urdf', 'franka_arm.gazebo.xacro'
     )
 
     robot_description_config = xacro.process_file(
@@ -50,24 +69,24 @@ def get_robot_description(context: LaunchContext, robot_type, load_gripper, fran
             'hand': load_gripper_str,
             'ros2_control': 'true',
             'gazebo': 'true',
-            'ee_id': franka_hand_str
+            'ee_id': franka_hand_str,
+            'gazebo_effort': 'true',
         }
     )
 
+    if not isinstance(robot_description_config, xml.dom.minidom.Document):
+        raise RuntimeError(
+            f'The given xacro file {franka_xacro_file} is not a valid xml format.')
+
     robot_description = {'robot_description': robot_description_config.toxml()}
 
-    robot_state_publisher = Node(
+    return [Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
         name='robot_state_publisher',
         output='both',
-        parameters=[
-            robot_description,
-        ]
-    )
-
-    return [robot_state_publisher]
-
+        parameters=[robot_description],
+    )]
 
 def generate_launch_description():
     # Configure ROS nodes for launch
@@ -75,11 +94,17 @@ def generate_launch_description():
     franka_hand_name = 'franka_hand'
     robot_type_name = 'robot_type'
     namespace_name = 'namespace'
+    controller_name = 'controller'
+    rviz_name = 'rviz'
+    gz_args_name = 'gz_args'
 
     load_gripper = LaunchConfiguration(load_gripper_name)
     franka_hand = LaunchConfiguration(franka_hand_name)
     robot_type = LaunchConfiguration(robot_type_name)
     namespace = LaunchConfiguration(namespace_name)
+    controller = LaunchConfiguration(controller_name)
+    rviz = LaunchConfiguration(rviz_name)
+    gz_args = LaunchConfiguration(gz_args_name)
 
     load_gripper_launch_argument = DeclareLaunchArgument(
         load_gripper_name,
@@ -97,6 +122,18 @@ def generate_launch_description():
         namespace_name,
         default_value='',
         description='Namespace for the robot. If not set, the robot will be launched in the root namespace.')
+    controller_launch_argument = DeclareLaunchArgument(
+        controller_name,
+        default_value='gravity_compensation_example_controller',
+        description='The controller name to be used. You can choose one from the franka_example_controllers.')
+    gz_args_launch_argument = DeclareLaunchArgument(
+        gz_args_name,
+        default_value='-r empty.sdf',
+        description='Extra args to be forwared to gazebo')
+    rviz_launch_argument = DeclareLaunchArgument(
+        rviz_name,
+        default_value='true',
+        description='true/false for visualizing the robot in rviz')
 
     # Get robot description
     robot_state_publisher = OpaqueFunction(
@@ -106,37 +143,44 @@ def generate_launch_description():
     # Gazebo Sim
     os.environ['GZ_SIM_RESOURCE_PATH'] = os.path.dirname(
         get_package_share_directory('franka_description'))
-    pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
     gazebo_empty_world = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')),
-        launch_arguments={'gz_args': 'empty.sdf -r', }.items(),
+        PathJoinSubstitution([
+            FindPackageShare('ros_gz_sim'),
+            'launch',
+            'gz_sim.launch.py'
+        ]),
+        launch_arguments={'gz_args': gz_args}.items(),
     )
 
-    # Spawn
     spawn = Node(
-        package='ros_gz_sim',
-        executable='create',
-        namespace=namespace,
+        package='ros_gz_sim', executable='create',
         arguments=['-topic', '/robot_description'],
         output='screen',
     )
 
-    # Visualize in RViz
-    rviz_file = os.path.join(get_package_share_directory('franka_description'), 'rviz',
-                             'visualize_franka.rviz')
-    rviz = Node(
-        package='rviz2',
-        executable='rviz2',
-        name='rviz2',
-        namespace=namespace,
-        arguments=['--display-config', rviz_file, '-f', 'world'],
+    rviz_file = os.path.join(get_package_share_directory('franka_description'),
+                             'rviz', 'visualize_franka.rviz')
+
+    rviz_node = Node(package='rviz2',
+                     executable='rviz2',
+                     name='rviz2',
+                     namespace=namespace,
+                     arguments=['--display-config', rviz_file, '-f', 'world'],
+                     condition=IfCondition(rviz))
+
+    joint_state_broadcaster = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=[
+            'joint_state_broadcaster',
+            '--controller-manager-timeout', '30',
+        ],
+        output='screen'
     )
 
-    load_joint_state_broadcaster = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'joint_state_broadcaster'],
-        output='screen'
+    launch_controller = OpaqueFunction(
+        function=load_controller,
+        args=[controller]
     )
 
     return LaunchDescription([
@@ -144,23 +188,33 @@ def generate_launch_description():
         franka_hand_launch_argument,
         robot_type_launch_argument,
         namespace_launch_argument,
+        controller_launch_argument,
+        gz_args_launch_argument,
+        rviz_launch_argument,
         gazebo_empty_world,
         robot_state_publisher,
-        rviz,
+        rviz_node,
         spawn,
         RegisterEventHandler(
             event_handler=OnProcessExit(
                 target_action=spawn,
-                on_exit=[load_joint_state_broadcaster],
+                on_exit=[joint_state_broadcaster],
             )
         ),
-        Node(
-            package='joint_state_publisher',
-            executable='joint_state_publisher',
-            name='joint_state_publisher',
-            namespace=namespace,
-            parameters=[
-                {'source_list': ['joint_states'],
-                 'rate': 30}],
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=joint_state_broadcaster,
+                on_exit=[launch_controller],
+            )
         ),
+        RegisterEventHandler(
+            OnShutdown(
+                on_shutdown=[
+                    ExecuteProcess(
+                        cmd=['pkill', '-SIGINT', '-f', 'gz sim'],
+                        name='gz_sim_graceful_shutdown',
+                    )
+                ]
+            )
+        )
     ])
