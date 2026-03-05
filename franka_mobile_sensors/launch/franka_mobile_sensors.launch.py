@@ -21,75 +21,78 @@ from launch.substitutions import LaunchConfiguration
 
 
 def generate_launch_description() -> LaunchDescription:
+    """Generate launch description for franka_mobile_sensors."""
     pkg_dir = get_package_share_directory('franka_mobile_sensors')
-    
+
     global_args = [
         DeclareLaunchArgument(
             'start_cameras',
             default_value='true',
             choices=['true', 'false'],
-            description='Whether to start RealSense camera drivers'
+            description='Whether to start RealSense camera drivers',
         ),
         DeclareLaunchArgument(
             'start_lidars',
-            default_value='true', 
+            default_value='true',
             choices=['true', 'false'],
-            description='Whether to start SICK safety scanner drivers'
+            description='Whether to start SICK safety scanner drivers',
         ),
         DeclareLaunchArgument(
             'start_rviz',
             default_value='true',
-            choices=['true', 'false'], 
-            description='Whether to start RViz visualization'
+            choices=['true', 'false'],
+            description='Whether to start RViz visualization',
         ),
         DeclareLaunchArgument(
             'config_file',
             default_value='default_sensor_suite',
-            description='Configuration file to use (without .yaml extension)'
+            description='Configuration file to use (without .yaml extension)',
         ),
         DeclareLaunchArgument(
             'robot_xacro',
             default_value='tmrv0_2_with_sensors.xacro',
-            description='XACRO file for robot with sensors'
+            description='XACRO file for robot with sensors',
         ),
     ]
-    
+
     camera_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            pkg_dir, '/launch/cameras/realsense_cameras.launch.py'
-        ]),
+        PythonLaunchDescriptionSource(
+            [pkg_dir, '/launch/cameras/realsense_cameras.launch.py']
+        ),
         launch_arguments={
             'config_file': LaunchConfiguration('config_file'),
         }.items(),
-        condition=IfCondition(LaunchConfiguration('start_cameras'))
+        condition=IfCondition(LaunchConfiguration('start_cameras')),
     )
-    
+
     lidar_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            pkg_dir, '/launch/lidars/safety_scanners.launch.py'
-        ]),
+        PythonLaunchDescriptionSource(
+            [pkg_dir, '/launch/lidars/safety_scanners.launch.py']
+        ),
         launch_arguments={
             'config_file': LaunchConfiguration('config_file'),
         }.items(),
-        condition=IfCondition(LaunchConfiguration('start_lidars'))
+        condition=IfCondition(LaunchConfiguration('start_lidars')),
     )
-    
+
     rviz_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            pkg_dir, '/launch/visualization/rviz.launch.py'
-        ]),
+        PythonLaunchDescriptionSource(
+            [pkg_dir, '/launch/visualization/rviz.launch.py']
+        ),
         launch_arguments={
             'robot_xacro': LaunchConfiguration('robot_xacro'),
         }.items(),
-        condition=IfCondition(LaunchConfiguration('start_rviz'))
+        condition=IfCondition(LaunchConfiguration('start_rviz')),
     )
-    
-    return LaunchDescription([
-        *global_args,
-        camera_launch,
-        lidar_launch, 
-        rviz_launch,
-    ])
+
+    return LaunchDescription(
+        [
+            *global_args,
+            camera_launch,
+            lidar_launch,
+            rviz_launch,
+        ]
+    )
 
 
 if __name__ == '__main__':

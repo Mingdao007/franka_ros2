@@ -8,6 +8,7 @@
   <license>Apache 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
 
   <exec_depend>franka_description</exec_depend>
   <exec_depend>rviz2</exec_depend>
@@ -17,7 +18,11 @@
   <exec_depend>olv_module_descriptions</exec_depend>
   <exec_depend>sick_safetyscanners2</exec_depend>
   <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_cmake_copyright</test_depend>
+  <test_depend>ament_cmake_flake8</test_depend>
+  <test_depend>ament_cmake_pep257</test_depend>
+  <test_depend>ament_cmake_lint_cmake</test_depend>
+  <test_depend>ament_cmake_xmllint</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

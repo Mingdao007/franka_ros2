@@ -12,29 +12,25 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import sys
-from pathlib import Path
 from dataclasses import dataclass, field
-from typing import List, Dict
+from typing import Dict, List
 
-# Add utils to path for shared utilities
-current_dir = Path(__file__).parent
-sys.path.append(str(current_dir.parent / 'utils'))
-from config_loader import load_yaml_config
+from franka_mobile_sensors.utils.config_loader import load_yaml_config
 
 
 @dataclass(frozen=True)
 class LidarConfig:
     """Configuration for a single lidar."""
+
     name: str
     namespace: str
     frame_id: str
     sensor_ip: str
     device_profile: str
-    
+
     @property
     def node_name(self) -> str:
-        return f"{self.name}_node"
+        return f'{self.name}_node'
 
     @classmethod
     def from_dict(cls, data: Dict) -> 'LidarConfig':
@@ -43,14 +39,18 @@ class LidarConfig:
             namespace=data['namespace'],
             frame_id=data['frame_id'],
             sensor_ip=data['sensor_ip'],
-            device_profile=data['device_profile']
+            device_profile=data['device_profile'],
         )
-    
+
     def load_lidar_parameters(self) -> Dict:
-        """Load lidar-specific parameters from the device profile file.
-        
-        Returns:
-            Dictionary containing lidar-specific parameters
+        """
+        Load lidar-specific parameters from the device profile file.
+
+        Returns
+        -------
+        dict
+            Dictionary containing lidar-specific parameters.
+
         """
         return load_yaml_config(self.device_profile, subdirectory='lidars')
 
@@ -58,8 +58,9 @@ class LidarConfig:
 @dataclass(frozen=True)
 class NetworkConfig:
     """Network configuration for sensors."""
-    host_ip: str = "172.16.1.9"
-    interface_ip: str = "0.0.0.0"
+
+    host_ip: str = '172.16.1.9'
+    interface_ip: str = '0.0.0.0'
     host_udp_port: int = 0
 
     @classmethod
@@ -67,45 +68,52 @@ class NetworkConfig:
         return cls(
             host_ip=data['host_ip'],
             interface_ip=data['interface_ip'],
-            host_udp_port=data['host_udp_port']
+            host_udp_port=data['host_udp_port'],
         )
 
 
 @dataclass(frozen=True)
 class LidarSuite:
     """Configuration for all lidars."""
+
     name: str
     description: str
     lidars: List[LidarConfig] = field(default_factory=list)
     network: NetworkConfig = field(default_factory=NetworkConfig)
-    
+
     def __post_init__(self):
         """Validate lidar configuration after initialization."""
         lidar_names = [lidar.name for lidar in self.lidars]
-        
         if len(set(lidar_names)) != len(lidar_names):
-            raise ValueError("Lidar names must be unique")
-        
+            raise ValueError('Lidar names must be unique')
+
     @classmethod
     def from_dict(cls, data: Dict) -> 'LidarSuite':
-        lidars = [LidarConfig.from_dict(lidar_data) for lidar_data in data['lidars']]
+        lidars = [LidarConfig.from_dict(lidar_data)
+                  for lidar_data in data['lidars']]
         network = NetworkConfig.from_dict(data.get('network', {}))
         return cls(
             name=data['name'],
             description=data['description'],
             lidars=lidars,
-            network=network
+            network=network,
         )
 
 
 def load_lidar_suite_from_yaml(config_name: str) -> LidarSuite:
-    """Load lidar suite configuration from YAML file.
-    
-    Args:
-        config_name: Name of the config file (without .yaml extension)
-        
-    Returns:
-        LidarSuite object loaded from the YAML file
+    """
+    Load lidar suite configuration from YAML file.
+
+    Parameters
+    ----------
+    config_name : str
+        Name of the config file (without .yaml extension)
+
+    Returns
+    -------
+    LidarSuite
+        LidarSuite object loaded from the YAML file.
+
     """
     config_data = load_yaml_config(config_name)
     return LidarSuite.from_dict(config_data)

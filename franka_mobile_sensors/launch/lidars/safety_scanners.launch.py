@@ -13,35 +13,32 @@
 #  limitations under the License.
 
 from typing import List
-from pathlib import Path
 
-from launch import LaunchDescription, LaunchContext
+from franka_mobile_sensors.lidars.lidar_configs import (
+    LidarConfig, LidarSuite, NetworkConfig, load_lidar_suite_from_yaml)
+from launch import LaunchContext, LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
-# Import lidar_configs
-import sys
-current_dir = Path(__file__).parent
-sys.path.append(str(current_dir))
-from lidar_configs import load_lidar_suite_from_yaml, LidarConfig, NetworkConfig, LidarSuite
-
 
 def create_lidar_launch_arguments() -> List[DeclareLaunchArgument]:
+    """Create lidar launch arguments."""
     args = [
         DeclareLaunchArgument(
             'config_file',
             default_value='default_sensor_suite',
-            description='Lidar configuration file to use (without .yaml extension)'
+            description='Lidar configuration file to use (without .yaml extension)',
         ),
     ]
-    
     return args
 
 
-def create_lidar_node(lidar_config: LidarConfig, network_config: NetworkConfig) -> Node:
+def create_lidar_node(
+        lidar_config: LidarConfig,
+        network_config: NetworkConfig) -> Node:
+    """Create a lidar node for launch."""
     lidar_specific_params = lidar_config.load_lidar_parameters()
-    
     base_params = {
         'frame_id': lidar_config.frame_id,
         'sensor_ip': lidar_config.sensor_ip,
@@ -49,9 +46,7 @@ def create_lidar_node(lidar_config: LidarConfig, network_config: NetworkConfig) 
         'interface_ip': network_config.interface_ip,
         'host_udp_port': network_config.host_udp_port,
     }
-    
     all_params = {**base_params, **lidar_specific_params}
-    
     return Node(
         package='sick_safetyscanners2',
         executable='sick_safetyscanners2_node',
@@ -63,28 +58,31 @@ def create_lidar_node(lidar_config: LidarConfig, network_config: NetworkConfig) 
     )
 
 
-def create_lidar_nodes(context: LaunchContext, lidar_suite: LidarSuite) -> List[Node]:
+def create_lidar_nodes(
+        context: LaunchContext,
+        lidar_suite: LidarSuite) -> List[Node]:
+    """Create lidar nodes for launch."""
     lidar_nodes = []
-    
     for lidar in lidar_suite.lidars:
         lidar_node = create_lidar_node(lidar, lidar_suite.network)
         lidar_nodes.append(lidar_node)
-    
     return lidar_nodes
 
 
-def lidar_launch_setup(context: LaunchContext, *args, **kwargs) -> List:
-    config_file = context.perform_substitution(LaunchConfiguration('config_file'))
+def lidar_launch_setup(context: LaunchContext, *args, **kwargs):
+    """Set up lidar launch."""
+    config_file = context.perform_substitution(
+        LaunchConfiguration('config_file'))
     lidar_suite = load_lidar_suite_from_yaml(config_file)
     lidar_nodes = create_lidar_nodes(context, lidar_suite)
     return lidar_nodes
 
 
 def generate_launch_description() -> LaunchDescription:
-    return LaunchDescription([
-        *create_lidar_launch_arguments(),
-        OpaqueFunction(function=lidar_launch_setup)
-    ])
+    """Generate launch description."""
+    return LaunchDescription(
+        [*create_lidar_launch_arguments(), OpaqueFunction(function=lidar_launch_setup)]
+    )
 
 
 if __name__ == '__main__':
