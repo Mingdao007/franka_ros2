@@ -22,6 +22,7 @@ Requires libfranka >= 0.20.4 and franka_description >= 2.4.0 requires ROS 2 Jazz
 * fix: added arm_prefix functionality to all franka_example_controllers and franka_robot_state_broadcaster
 * feat: add sensor support for gazebo. Remove multi robot example for gazebo.
 * feat: support tmr simulation with sensors
+* chore: removed integration_launch_testing package, moved integration tests in their subpackage
 
 v2.2.0 (2026-01-14)
 ----------

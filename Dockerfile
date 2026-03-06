@@ -20,6 +20,7 @@ RUN apt-get update && \
         gdb \
         git \
         nano \
+        iputils-ping \
         openssh-client \
         python3-colcon-argcomplete \
         python3-colcon-common-extensions \
