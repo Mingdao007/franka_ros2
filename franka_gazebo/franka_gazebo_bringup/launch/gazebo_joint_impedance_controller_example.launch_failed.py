@@ -14,13 +14,10 @@
 
 import os
 import xacro
-
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction, ExecuteProcess, RegisterEventHandler
 from launch.event_handlers import OnProcessExit
-
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -29,6 +26,7 @@ from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import  LaunchConfiguration
 from launch_ros.actions import Node
+from launch.actions import TimerAction
 
 def get_robot_description(context: LaunchContext, arm_id, load_gripper, franka_hand):
     arm_id_str = context.perform_substitution(arm_id)
@@ -81,7 +79,6 @@ def generate_launch_description():
     arm_id = LaunchConfiguration(arm_id_name)
     namespace = LaunchConfiguration(namespace_name)
 
-    # DeclareLaunchArgument：设定初始值
     load_gripper_launch_argument = DeclareLaunchArgument(
             load_gripper_name,
             default_value='false',
@@ -121,6 +118,21 @@ def generate_launch_description():
         arguments=['-topic', '/robot_description'],
         output='screen',
     )
+    
+    logger = Node(
+        package='franka_gazebo_bringup',
+        executable='impedance_logger_node',
+        name='impedance_logger',
+        output='screen'
+    )
+
+    # 等 joint_state_broadcaster 与 controller 都 active 后再起 Logger
+    start_logger = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=load_joint_state_broadcaster,
+            on_exit=[joint_impedance_example_controller, TimerAction(period=3.0, actions=[logger])]
+        )
+    )
 
     # Visualize in RViz
     rviz_file = os.path.join(get_package_share_directory('franka_description'), 'rviz',
@@ -132,13 +144,14 @@ def generate_launch_description():
              arguments=['--display-config', rviz_file, '-f', 'world'],
     )
 
-    # Load controllers
+    # state broadcaster
     load_joint_state_broadcaster = ExecuteProcess(
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
                 'joint_state_broadcaster'],
         output='screen'
     )
 
+    # joint impedance controller
     joint_impedance_example_controller = ExecuteProcess(
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
                 'joint_impedance_example_controller'],
@@ -166,6 +179,7 @@ def generate_launch_description():
                 on_exit=[joint_impedance_example_controller],
             )
         ),
+        start_logger,
         Node(
             package='joint_state_publisher',
             executable='joint_state_publisher',

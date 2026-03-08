@@ -14,13 +14,10 @@
 
 import os
 import xacro
-
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction, ExecuteProcess, RegisterEventHandler
 from launch.event_handlers import OnProcessExit
-
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -81,7 +78,6 @@ def generate_launch_description():
     arm_id = LaunchConfiguration(arm_id_name)
     namespace = LaunchConfiguration(namespace_name)
 
-    # DeclareLaunchArgument：设定初始值
     load_gripper_launch_argument = DeclareLaunchArgument(
             load_gripper_name,
             default_value='false',
@@ -132,13 +128,14 @@ def generate_launch_description():
              arguments=['--display-config', rviz_file, '-f', 'world'],
     )
 
-    # Load controllers
+    # state broadcaster
     load_joint_state_broadcaster = ExecuteProcess(
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
                 'joint_state_broadcaster'],
         output='screen'
     )
 
+    # joint impedance controller
     joint_impedance_example_controller = ExecuteProcess(
         cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
                 'joint_impedance_example_controller'],

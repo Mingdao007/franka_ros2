@@ -19,6 +19,7 @@ find_package(ament_index_cpp REQUIRED)
 find_package(controller_interface REQUIRED)
 find_package(franka_msgs REQUIRED)
 find_package(franka_semantic_components REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(moveit_core REQUIRED)
 find_package(moveit_msgs REQUIRED)
@@ -37,6 +38,7 @@ add_library(
         src/cartesian_pose_example_controller.cpp
         src/cartesian_velocity_example_controller.cpp
         src/elbow_example_controller.cpp
+        src/direct_force_example_controller.cpp
         src/gravity_compensation_example_controller.cpp
         src/gripper_example_controller.cpp
         src/joint_impedance_example_controller.cpp
@@ -57,6 +59,7 @@ ament_target_dependencies(
         controller_interface
         franka_msgs
         franka_semantic_components
+        geometry_msgs
         hardware_interface
         moveit_core
         moveit_msgs

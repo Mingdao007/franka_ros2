@@ -1,0 +1,7 @@
+# F/T Sensor Override Configuration
+# This file is loaded AFTER the main franka_gazebo_controllers.yaml
+# to enable F/T sensor mode for direct force measurement
+
+direct_force_example_controller:
+  ros__parameters:
+    use_ft_sensor: true

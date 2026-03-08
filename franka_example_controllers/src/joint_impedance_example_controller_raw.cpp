@@ -21,11 +21,11 @@
 #include <Eigen/Eigen>
 
 namespace franka_example_controllers {
+
 // output: joint effort control signals, 返回类型 类名::函数名(参数)
 // 去 controller_interface 这个命名空间里，找名为 InterfaceConfiguration 的类型. The function
 // command_interface_configuration() belonging to class JointImpedanceWithIKExampleController 
 // returns a controller_interface::InterfaceConfiguration object.
-// command_interface_configuration 是填表的过程, 表上填的是 “7把力控（Effort）的钥匙”。
 controller_interface::InterfaceConfiguration 
 JointImpedanceExampleController::command_interface_configuration() const {
   controller_interface::InterfaceConfiguration config;
@@ -65,7 +65,7 @@ controller_interface::return_type JointImpedanceExampleController::update(
   const double kAlpha = 0.99;
   dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_; // 关节速度低通滤波
   Vector7d tau_d_calculated =
-      k_gains_.cwiseProduct(q_goal - q_) + d_gains_.cwiseProduct(-dq_filtered_); // 阻抗控制力矩
+      k_gains_.cwiseProduct(q_goal - q_) + d_gains_.cwiseProduct(-dq_filtered_);
   for (int i = 0; i < num_joints; ++i) {
     command_interfaces_[i].set_value(tau_d_calculated(i));
   }

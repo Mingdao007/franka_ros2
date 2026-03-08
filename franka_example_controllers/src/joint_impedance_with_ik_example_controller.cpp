@@ -72,8 +72,9 @@ void JointImpedanceWithIKExampleController::update_joint_states() {
   }
 }
 
+// upadte the desired position of the end-effector in a sinusoidal pattern
 Eigen::Vector3d JointImpedanceWithIKExampleController::compute_new_position() {
-  double radius = 0.1;
+  double radius = 0.05;
 
   double angle = M_PI / 4 * (1 - std::cos(M_PI / 5.0 * elapsed_time_));
 
