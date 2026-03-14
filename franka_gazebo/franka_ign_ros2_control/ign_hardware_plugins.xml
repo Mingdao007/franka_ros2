@@ -1,0 +1,7 @@
+<library path="ign_hardware_plugins">
+  <class name="franka_ign_ros2_control/IgnitionSystem"
+         type="ign_ros2_control::IgnitionSystem"
+         base_class_type="ign_ros2_control::IgnitionSystemInterface">
+    <description>Franka Ignition Gazebo hardware interface</description>
+  </class>
+</library>

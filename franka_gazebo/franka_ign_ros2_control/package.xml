@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>franka_ign_ros2_control</name>
+  <version>0.0.1</version>
+  <description>Franka Ignition Gazebo hardware plugin</description>
+  <maintainer email="support@franka.de">Franka Robotics GmbH</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>ign_ros2_control</depend>
+  <depend>hardware_interface</depend>
+  <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

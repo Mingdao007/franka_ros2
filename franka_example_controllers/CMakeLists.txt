@@ -34,22 +34,21 @@ find_package(Eigen3 REQUIRED)
 add_library(
         ${PROJECT_NAME}
         SHARED
-        src/cartesian_elbow_example_controller.cpp
-        src/cartesian_orientation_example_controller.cpp
-        src/cartesian_pose_example_controller.cpp
-        src/cartesian_velocity_example_controller.cpp
-        src/elbow_example_controller.cpp
-        src/direct_force_example_controller.cpp
+        src/fr3/cartesian_elbow_example_controller.cpp
+        src/fr3/cartesian_orientation_example_controller.cpp
+        src/fr3/cartesian_pose_example_controller.cpp
+        src/fr3/cartesian_velocity_example_controller.cpp
+        src/fr3/elbow_example_controller.cpp
         src/hybrid_circle_force_controller.cpp
-        src/gravity_compensation_example_controller.cpp
-        src/gripper_example_controller.cpp
-        src/joint_impedance_example_controller.cpp
-        src/joint_impedance_with_ik_example_controller.cpp
-        src/joint_position_example_controller.cpp
-        src/joint_velocity_example_controller.cpp
-        src/model_example_controller.cpp
+        src/fr3/gravity_compensation_example_controller.cpp
+        src/fr3/gripper_example_controller.cpp
+        src/fr3/joint_impedance_example_controller.cpp
+        src/fr3/joint_impedance_with_ik_example_controller.cpp
+        src/fr3/joint_position_example_controller.cpp
+        src/fr3/joint_velocity_example_controller.cpp
+        src/fr3/model_example_controller.cpp
         src/motion_generator.cpp
-        src/move_to_start_example_controller.cpp)
+        src/fr3/move_to_start_example_controller.cpp)
 target_include_directories(
         ${PROJECT_NAME}
         PUBLIC
