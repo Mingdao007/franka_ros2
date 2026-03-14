@@ -6,6 +6,9 @@ Records force tracking data from ROS2 topics and saves to CSV file.
 
 Usage:
     python3 collect_force_data.py [--duration 20] [--output data.csv]
+                                 [--controller-name direct_force_example_controller]
+                                 [--commanded-topic /foo/commanded_wrench]
+                                 [--estimated-topic /foo/estimated_wrench]
 """
 import rclpy
 from rclpy.node import Node
@@ -18,11 +21,13 @@ from datetime import datetime
 
 
 class ForceDataCollector(Node):
-    def __init__(self, output_file, duration):
+    def __init__(self, output_file, duration, commanded_topic, estimated_topic):
         super().__init__('force_data_collector')
         
         self.output_file = output_file
         self.duration = duration
+        self.commanded_topic = commanded_topic
+        self.estimated_topic = estimated_topic
         self.data = []
         self.start_time = None
         self.lock = threading.Lock()
@@ -33,19 +38,21 @@ class ForceDataCollector(Node):
         
         self.cmd_sub = self.create_subscription(
             WrenchStamped,
-            '/direct_force_example_controller/commanded_wrench',
+            self.commanded_topic,
             self.cmd_callback,
             10
         )
         
         self.est_sub = self.create_subscription(
             WrenchStamped,
-            '/direct_force_example_controller/estimated_wrench',
+            self.estimated_topic,
             self.est_callback,
             10
         )
         
-        self.get_logger().info(f'Recording for {duration}s -> {output_file}')
+        self.get_logger().info(
+            f'Recording for {duration}s -> {output_file} | cmd={self.commanded_topic} est={self.estimated_topic}'
+        )
         
     def cmd_callback(self, msg):
         with self.lock:
@@ -101,7 +108,18 @@ def main():
                        help='Recording duration in seconds')
     parser.add_argument('--output', type=str, default=None,
                        help='Output CSV file path')
+    parser.add_argument('--controller-name', type=str, default='direct_force_example_controller',
+                       help='Controller name to build default wrench topics')
+    parser.add_argument('--commanded-topic', type=str, default=None,
+                       help='Override commanded wrench topic')
+    parser.add_argument('--estimated-topic', type=str, default=None,
+                       help='Override estimated wrench topic')
     args = parser.parse_args()
+
+    if args.commanded_topic is None:
+        args.commanded_topic = f'/{args.controller_name}/commanded_wrench'
+    if args.estimated_topic is None:
+        args.estimated_topic = f'/{args.controller_name}/estimated_wrench'
     
     # Default output filename with timestamp
     if args.output is None:
@@ -109,7 +127,7 @@ def main():
         args.output = f'/home/andy/franka_ros2_ws/force_data_{timestamp}.csv'
     
     rclpy.init()
-    node = ForceDataCollector(args.output, args.duration)
+    node = ForceDataCollector(args.output, args.duration, args.commanded_topic, args.estimated_topic)
     
     # Spin in background
     spin_thread = threading.Thread(target=rclpy.spin, args=(node,), daemon=True)
@@ -120,6 +138,8 @@ def main():
     print(f'{"="*50}')
     print(f'  Duration: {args.duration}s')
     print(f'  Output:   {args.output}')
+    print(f'  CmdTopic: {args.commanded_topic}')
+    print(f'  EstTopic: {args.estimated_topic}')
     print(f'{"="*50}\n')
     
     try:

@@ -10,3 +10,5 @@ install/
 log/
 libfranka
 franka_description
+results/
+*.sweep_backup
