@@ -77,18 +77,16 @@
             The Gripper example controller demonstrates the use of the Robot gripper.
         </description>
     </class>
-    <class name="franka_example_controllers/MobileCartesianVelocityExampleController"
-        type="franka_example_controllers::MobileCartesianVelocityExampleController"
-        base_class_type="controller_interface::ControllerInterface">
+    <class name="franka_example_controllers/DirectForceExampleController"
+           type="franka_example_controllers::DirectForceExampleController" base_class_type="controller_interface::ControllerInterface">
         <description>
-            The mobile cartesian velocity example controller fowards cartesian velocity commands to the mobile robot.
+            A direct force controller in base-frame z (normal force regulation) with Cartesian impedance stabilization.
         </description>
     </class>
-    <class name="franka_example_controllers/MobileCartesianVelocityWithIkExampleController"
-        type="franka_example_controllers::MobileCartesianVelocityWithIkExampleController"
-        base_class_type="controller_interface::ControllerInterface">
+    <class name="franka_example_controllers/HybridCircleForceController"
+           type="franka_example_controllers::HybridCircleForceController" base_class_type="controller_interface::ControllerInterface">
         <description>
-            The mobile cartesian velocity with IK example controller computes swerve drive commands from cartesian velocity commands and forwards them to the mobile robot.
+            A hybrid controller for XY circular tracking with constant Z-axis normal force regulation in Gazebo.
         </description>
     </class>
 </library>
