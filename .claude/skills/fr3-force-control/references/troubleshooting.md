@@ -13,7 +13,7 @@ Check:
 Actions:
 - Rebuild:
   ```bash
-  cd /home/andy/franka_ros2_ws
+  cd <your_workspace>
   source /opt/ros/humble/setup.bash
   colcon build --packages-select franka_semantic_components franka_hardware franka_example_controllers --symlink-install
   source install/setup.bash

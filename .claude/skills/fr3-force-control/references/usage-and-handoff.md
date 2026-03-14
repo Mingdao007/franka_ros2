@@ -35,7 +35,47 @@ Yes, in most cases reading this skill is enough as the base context.
 For reliable transfer, always include:
 1. Skill path: `.claude/skills/fr3-force-control/SKILL.md`
 2. Current state file: `references/current-state.md`
-3. Active priority note (for now: ink is on hold, focus on force-control tasks)
+3. Active priority note (for now: focus on force-control validation + ink trail iteration)
 
 Recommended handoff prompt:
 `Read .claude/skills/fr3-force-control/SKILL.md and references/current-state.md, then continue with the highest-priority force-control validation task.`
+
+## F) Git branch workflow and upload SOP
+
+### Branch structure
+```
+origin/humble (upstream frankarobotics)
+  └── fork/main (your fork baseline, synced with origin/humble)
+        └── fork/feature/<name> (one branch per feature)
+```
+
+### After finishing a feature
+```bash
+cd <workspace>/src
+source /opt/ros/humble/setup.bash
+colcon build --packages-select franka_example_controllers franka_gazebo_bringup --symlink-install
+source install/setup.bash
+# Test manually, confirm behavior
+
+# Update skill references if controller/config changed
+# Commit
+git add <specific files>
+git commit -m "feat: <description>"
+git push -u fork feature/<name>
+# Create PR to main via GitHub
+```
+
+### Starting a new feature
+```bash
+git checkout main
+git pull fork main
+git checkout -b feature/<new-name>
+```
+
+### Syncing with upstream
+```bash
+git checkout main
+git fetch origin
+git merge origin/humble
+git push fork main
+```

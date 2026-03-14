@@ -2,7 +2,7 @@
 
 ## 1) Build
 ```bash
-cd /home/andy/franka_ros2_ws
+cd <your_workspace>
 source /opt/ros/humble/setup.bash
 colcon build --packages-select franka_example_controllers franka_gazebo_bringup --symlink-install
 source install/setup.bash
@@ -10,7 +10,7 @@ source install/setup.bash
 
 ## 2) Manual launch with RViz
 ```bash
-cd /home/andy/franka_ros2_ws
+cd <your_workspace>
 source install/setup.bash
 ros2 launch franka_gazebo_bringup gazebo_hybrid_circle_force.launch.py use_rviz:=true
 ```
@@ -24,7 +24,7 @@ Expected behavior:
 
 ## 3) Run a short baseline experiment (batch)
 ```bash
-cd /home/andy/franka_ros2_ws
+cd <your_workspace>
 source install/setup.bash
 REPEATS=1 DURATION=20 KEY_RUN_POLICY=first-gui bash src/run_hybrid_circle_force_experiment.sh
 ```
