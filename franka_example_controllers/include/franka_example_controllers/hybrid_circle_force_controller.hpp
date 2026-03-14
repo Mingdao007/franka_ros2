@@ -83,9 +83,12 @@ class HybridCircleForceController : public controller_interface::ControllerInter
   double circle_center_offset_y_{0.0};
   bool use_current_pose_as_center_{true};
 
-  // XY Cartesian position-velocity tracking gains.
+  // XY Cartesian position PID gains.
   double kp_xy_{250.0};
   double kd_xy_{35.0};
+  double ki_xy_{0.0};
+  double i_limit_xy_{0.5};
+  double d_filter_alpha_xy_{0.5};
 
   // Z-axis force PID settings.
   double force_desired_{5.0};
@@ -103,12 +106,20 @@ class HybridCircleForceController : public controller_interface::ControllerInter
   Vector7d joint_damping_{(Vector7d() << 15.0, 15.0, 15.0, 15.0, 10.0, 8.0, 5.0).finished()};
   static constexpr double k_delta_tau_max{1.0};
 
-  // Force PID state.
+  // Force PID state (Z-axis).
   double elapsed_time_{0.0};
   double e_prev_{0.0};
   double i_state_{0.0};
   double f_meas_filtered_{0.0};
   double de_filtered_{0.0};
+
+  // XY position PID state (circle phase).
+  double ix_state_{0.0};
+  double iy_state_{0.0};
+  double ex_prev_{0.0};
+  double ey_prev_{0.0};
+  double dex_filtered_{0.0};
+  double dey_filtered_{0.0};
 
   // Bias capture at activation.
   bool use_bias_calibration_{false};
@@ -122,9 +133,19 @@ class HybridCircleForceController : public controller_interface::ControllerInter
   double descent_kd_xy_{160.0};
   double descent_kp_z_{1000.0};
   double descent_kd_z_{50.0};
+  double descent_ki_xy_{0.0};
+  double descent_ki_z_{0.0};
   double descent_speed_{0.02};           // m/s downward
   double descent_contact_force_{2.0};    // |Fz| threshold to transition
   double descent_start_z_{0.0};
+
+  // Descent PID state.
+  double ix_descent_{0.0};
+  double iy_descent_{0.0};
+  double iz_descent_{0.0};
+  double ex_prev_descent_{0.0};
+  double ey_prev_descent_{0.0};
+  double ez_prev_descent_{0.0};
 
   // Circle center is initialized from first valid EE pose.
   bool center_initialized_{false};

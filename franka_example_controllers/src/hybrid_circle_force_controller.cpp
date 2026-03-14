@@ -55,6 +55,9 @@ CallbackReturn HybridCircleForceController::on_init() {
 
     auto_declare<double>("kp_xy", 250.0);
     auto_declare<double>("kd_xy", 35.0);
+    auto_declare<double>("ki_xy", 0.0);
+    auto_declare<double>("i_limit_xy", 0.5);
+    auto_declare<double>("d_filter_alpha_xy", 0.5);
 
     auto_declare<double>("force_desired", 5.0);
     auto_declare<double>("force_kp", 0.03);
@@ -74,6 +77,8 @@ CallbackReturn HybridCircleForceController::on_init() {
     auto_declare<double>("descent_kd_xy", 160.0);
     auto_declare<double>("descent_kp_z", 1000.0);
     auto_declare<double>("descent_kd_z", 50.0);
+    auto_declare<double>("descent_ki_xy", 0.0);
+    auto_declare<double>("descent_ki_z", 0.0);
     auto_declare<double>("descent_speed", 0.02);
     auto_declare<double>("descent_contact_force", 2.0);
 
@@ -120,6 +125,9 @@ CallbackReturn HybridCircleForceController::on_configure(
 
   kp_xy_ = get_node()->get_parameter("kp_xy").as_double();
   kd_xy_ = get_node()->get_parameter("kd_xy").as_double();
+  ki_xy_ = get_node()->get_parameter("ki_xy").as_double();
+  i_limit_xy_ = get_node()->get_parameter("i_limit_xy").as_double();
+  d_filter_alpha_xy_ = get_node()->get_parameter("d_filter_alpha_xy").as_double();
 
   force_desired_ = get_node()->get_parameter("force_desired").as_double();
   force_kp_ = get_node()->get_parameter("force_kp").as_double();
@@ -138,6 +146,8 @@ CallbackReturn HybridCircleForceController::on_configure(
   descent_kd_xy_ = get_node()->get_parameter("descent_kd_xy").as_double();
   descent_kp_z_ = get_node()->get_parameter("descent_kp_z").as_double();
   descent_kd_z_ = get_node()->get_parameter("descent_kd_z").as_double();
+  descent_ki_xy_ = get_node()->get_parameter("descent_ki_xy").as_double();
+  descent_ki_z_ = get_node()->get_parameter("descent_ki_z").as_double();
   descent_speed_ = get_node()->get_parameter("descent_speed").as_double();
   descent_contact_force_ = get_node()->get_parameter("descent_contact_force").as_double();
 
@@ -278,6 +288,22 @@ CallbackReturn HybridCircleForceController::on_activate(
   tau_cmd_prev_.setZero();
   trail_points_.clear();
   trail_desired_points_.clear();
+
+  // XY PID state (circle phase).
+  ix_state_ = 0.0;
+  iy_state_ = 0.0;
+  ex_prev_ = 0.0;
+  ey_prev_ = 0.0;
+  dex_filtered_ = 0.0;
+  dey_filtered_ = 0.0;
+
+  // Descent PID state.
+  ix_descent_ = 0.0;
+  iy_descent_ = 0.0;
+  iz_descent_ = 0.0;
+  ex_prev_descent_ = 0.0;
+  ey_prev_descent_ = 0.0;
+  ez_prev_descent_ = 0.0;
 
   center_initialized_ = false;
   phase_ = Phase::kDescent;
@@ -450,9 +476,25 @@ controller_interface::return_type HybridCircleForceController::update(
     elapsed_time_ += dt;
     const double z_des = descent_start_z_ - descent_speed_ * elapsed_time_;
 
-    F_cmd(0) = descent_kp_xy_ * (circle_center_x_ - p_ee(0)) + descent_kd_xy_ * (0.0 - v_ee(0));
-    F_cmd(1) = descent_kp_xy_ * (circle_center_y_ - p_ee(1)) + descent_kd_xy_ * (0.0 - v_ee(1));
-    F_cmd(2) = descent_kp_z_ * (z_des - p_ee(2)) + descent_kd_z_ * (0.0 - v_ee(2));
+    // Descent XY PID: hold at circle center.
+    const double dex = circle_center_x_ - p_ee(0);
+    const double dey = circle_center_y_ - p_ee(1);
+    const double dez = z_des - p_ee(2);
+
+    ix_descent_ += dex * dt;
+    iy_descent_ += dey * dt;
+    iz_descent_ += dez * dt;
+
+    const double dex_dt = (dt > 1e-9) ? (dex - ex_prev_descent_) / dt : 0.0;
+    const double dey_dt = (dt > 1e-9) ? (dey - ey_prev_descent_) / dt : 0.0;
+    const double dez_dt = (dt > 1e-9) ? (dez - ez_prev_descent_) / dt : 0.0;
+    ex_prev_descent_ = dex;
+    ey_prev_descent_ = dey;
+    ez_prev_descent_ = dez;
+
+    F_cmd(0) = descent_kp_xy_ * dex + descent_ki_xy_ * ix_descent_ + descent_kd_xy_ * dex_dt;
+    F_cmd(1) = descent_kp_xy_ * dey + descent_ki_xy_ * iy_descent_ + descent_kd_xy_ * dey_dt;
+    F_cmd(2) = descent_kp_z_ * dez + descent_ki_z_ * iz_descent_ + descent_kd_z_ * dez_dt;
 
     // Clamp descent force command.
     if (F_cmd(2) > max_force_command_) F_cmd(2) = max_force_command_;
@@ -469,6 +511,12 @@ controller_interface::return_type HybridCircleForceController::update(
       e_prev_ = 0.0;
       i_state_ = 0.0;
       de_filtered_ = 0.0;
+      ix_state_ = 0.0;
+      iy_state_ = 0.0;
+      ex_prev_ = 0.0;
+      ey_prev_ = 0.0;
+      dex_filtered_ = 0.0;
+      dey_filtered_ = 0.0;
       RCLCPP_INFO(get_node()->get_logger(),
                    "Contact detected (Fz=%.2f), switching to circle phase", fz_meas);
     }
@@ -486,25 +534,32 @@ controller_interface::return_type HybridCircleForceController::update(
     const double ramp = (elapsed_time_ < soft_start_duration_)
                             ? 0.5 * (1.0 - std::cos(M_PI * elapsed_time_ / soft_start_duration_))
                             : 1.0;
-    const double dramp = (elapsed_time_ < soft_start_duration_)
-                             ? 0.5 * M_PI / soft_start_duration_ *
-                                   std::sin(M_PI * elapsed_time_ / soft_start_duration_)
-                             : 0.0;
     const double r = circle_radius_ * ramp;
-    const double dr = circle_radius_ * dramp;
 
     x_des = circle_center_x_ + r * std::cos(phi);
     y_des = circle_center_y_ + r * std::sin(phi);
-    const double vx_des = -r * omega * std::sin(phi) + dr * std::cos(phi);
-    const double vy_des = r * omega * std::cos(phi) + dr * std::sin(phi);
 
     ex = x_des - p_ee(0);
     ey = y_des - p_ee(1);
-    const double evx = vx_des - v_ee(0);
-    const double evy = vy_des - v_ee(1);
 
-    const double fx_cmd = kp_xy_ * ex + kd_xy_ * evx;
-    const double fy_cmd = kp_xy_ * ey + kd_xy_ * evy;
+    // XY PID: integral with anti-windup clamp.
+    ix_state_ += ex * dt;
+    iy_state_ += ey * dt;
+    if (ix_state_ > i_limit_xy_) ix_state_ = i_limit_xy_;
+    if (ix_state_ < -i_limit_xy_) ix_state_ = -i_limit_xy_;
+    if (iy_state_ > i_limit_xy_) iy_state_ = i_limit_xy_;
+    if (iy_state_ < -i_limit_xy_) iy_state_ = -i_limit_xy_;
+
+    // XY PID: filtered derivative of position error.
+    const double dex_raw = (dt > 1e-9) ? (ex - ex_prev_) / dt : 0.0;
+    const double dey_raw = (dt > 1e-9) ? (ey - ey_prev_) / dt : 0.0;
+    dex_filtered_ = d_filter_alpha_xy_ * dex_filtered_ + (1.0 - d_filter_alpha_xy_) * dex_raw;
+    dey_filtered_ = d_filter_alpha_xy_ * dey_filtered_ + (1.0 - d_filter_alpha_xy_) * dey_raw;
+    ex_prev_ = ex;
+    ey_prev_ = ey;
+
+    const double fx_cmd = kp_xy_ * ex + ki_xy_ * ix_state_ + kd_xy_ * dex_filtered_;
+    const double fy_cmd = kp_xy_ * ey + ki_xy_ * iy_state_ + kd_xy_ * dey_filtered_;
 
     const double e_force = force_desired_ - fz_meas;
 

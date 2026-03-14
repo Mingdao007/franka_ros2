@@ -159,9 +159,12 @@ hybrid_circle_force_controller:
     circle_center_offset_x: 0.0
     circle_center_offset_y: 0.0
 
-    # XY position-velocity tracking gains
+    # XY position PID gains
     kp_xy: 4000.0
     kd_xy: 160.0
+    ki_xy: 500.0
+    i_limit_xy: 0.5
+    d_filter_alpha_xy: 0.5
 
     # Z-axis force PID
     force_desired: 5.0
@@ -182,6 +185,8 @@ hybrid_circle_force_controller:
     descent_kd_xy: 200.0
     descent_kp_z: 2000.0
     descent_kd_z: 80.0
+    descent_ki_xy: 0.0
+    descent_ki_z: 0.0
     descent_speed: 0.05        # m/s downward
     descent_contact_force: 2.0 # |Fz| threshold to transition to circle
 
