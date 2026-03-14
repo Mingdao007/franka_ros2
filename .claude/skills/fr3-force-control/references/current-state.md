@@ -12,7 +12,7 @@
 | Cosine soft-start ramp | ✅ Done | C1-continuous radius ramp, no velocity discontinuity at transition |
 | Dedicated RViz config | ✅ Done | `hybrid_circle_force.rviz` with world frame, top-down view, both marker displays |
 | Orientation control (redundancy) | ❌ Reverted | Attempted with cross-product error, caused instability. Needs proper sign analysis and testing |
-| Periodic stutter at one angle | ❌ Open | Visible in Gazebo, not trajectory-related (cos/sin is smooth). Likely contact dynamics |
+| Periodic stutter at one angle | Open (low priority) | Ruled out: trajectory, Jacobian, PID, torque saturation, contact surface, logging, joint friction. Root cause unconfirmed; suspected simulation-level behavior |
 | Frequency sweep (0.1/0.2/0.3 Hz) | ❌ Pending | |
 | Multi-day repeatability | ❌ Pending | |
 | Real robot transfer SOP | ❌ Pending | |

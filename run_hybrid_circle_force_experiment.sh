@@ -16,6 +16,7 @@ DURATION="${DURATION:-15}"
 POLL_TIMEOUT="${POLL_TIMEOUT:-20}"
 RUN_TIMEOUT="${RUN_TIMEOUT:-50}"
 FREQUENCY="${FREQUENCY:-}"
+USE_RVIZ="${USE_RVIZ:-true}"
 RESULT_DIR_OVERRIDE="${RESULT_DIR_OVERRIDE:-}"
 
 STAMP="$(date +%Y%m%d_%H%M%S)"
@@ -87,7 +88,7 @@ for run_idx in $(seq 1 "${REPEATS}"); do
   launch_log="${run_dir}/launch.log"
   timeout "${RUN_TIMEOUT}" \
     ros2 launch franka_gazebo_bringup gazebo_hybrid_circle_force.launch.py \
-    use_rviz:=false >"${launch_log}" 2>&1 &
+    use_rviz:="${USE_RVIZ}" >"${launch_log}" 2>&1 &
   launch_pid=$!
 
   # Poll immediately — no blind settle sleep.
@@ -116,10 +117,11 @@ for run_idx in $(seq 1 "${REPEATS}"); do
   t3="$(ts)"
   echo "[TIMING] Collection done (+$((t3 - t0))s total)"
 
-  # Graceful stop then hard cleanup.
+  # Graceful stop, brief wait, then hard cleanup.
   kill -INT "${launch_pid}" 2>/dev/null || true
-  wait "${launch_pid}" 2>/dev/null || true
+  sleep 2
   cleanup_sim
+  wait "${launch_pid}" 2>/dev/null || true
   t4="$(ts)"
   echo "[TIMING] Shutdown complete (+$((t4 - t0))s total for run ${run_idx})"
 

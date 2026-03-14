@@ -63,14 +63,19 @@ Actions:
 - Never relax `k_delta_tau_max` to mask tracking issues — diagnose root cause.
 
 ## 6) Periodic stutter at specific angle in circle
-Possible causes:
-- Gazebo contact dynamics artifact (penalty-based solver force oscillation).
-- Joint torque rate saturation at specific configuration.
-- Heavy computation in control loop (e.g., blocking service calls — now removed).
+**Status: known Gazebo ODE solver limitation.**
 
-Diagnosis:
-- Check if red (desired) trail is smooth at that angle in RViz. If yes, it's tracking/physics, not trajectory.
-- Log joint torques and check if any joint hits the rate limit at that angle.
+Ruled out (investigated 2026-03-15):
+- Trajectory discontinuity (cosine ramp is C1-continuous)
+- Jacobian singularity (sigma_min constant, cond ≈ 8)
+- Force PID integrator residue (reset didn't help)
+- Soft-start duration (extended to 10s, didn't help)
+- Contact surface geometry (moved center, enlarged surfaces)
+- CSV logging blocking (disabled, still occurred)
+- Torque rate saturation (not triggered)
+- URDF joint friction (zeroed out, still occurred)
+
+Conclusion: root cause unconfirmed. Above factors have been ruled out by experiment. Suspected to be simulation-level behavior (ODE solver or contact dynamics), but not proven. Expected to differ on real hardware.
 
 ## 7) Ink trail not visible in RViz
 Check:

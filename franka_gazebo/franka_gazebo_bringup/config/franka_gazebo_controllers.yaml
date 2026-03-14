@@ -182,7 +182,7 @@ hybrid_circle_force_controller:
     descent_kd_xy: 200.0
     descent_kp_z: 2000.0
     descent_kd_z: 80.0
-    descent_speed: 0.02        # m/s downward
+    descent_speed: 0.05        # m/s downward
     descent_contact_force: 2.0 # |Fz| threshold to transition to circle
 
     # Joint damping and logging

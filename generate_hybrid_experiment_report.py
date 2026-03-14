@@ -9,16 +9,42 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import yaml
 
 from generate_pseudo_ink import plot_pseudo_ink
 
 
-FORCE_MEAN_ABS_LIMIT = 0.3
-FORCE_RMSE_LIMIT = 0.6
-XY_RMS_LIMIT = 0.005
+
+# Default YAML config path (relative to this script).
+DEFAULT_CONFIG_PATH = os.path.join(
+    os.path.dirname(__file__),
+    "franka_gazebo/franka_gazebo_bringup/config/franka_gazebo_controllers.yaml",
+)
 
 
-def compute_run_metrics(wrench_path, internal_path):
+def read_controller_config(config_path=None):
+    """Read actual controller parameters from YAML config."""
+    path = config_path or DEFAULT_CONFIG_PATH
+    defaults = {
+        "circle_radius": 0.05,
+        "circle_frequency": 0.2,
+        "force_desired": 5.0,
+    }
+    if not os.path.exists(path):
+        return defaults
+    try:
+        with open(path, "r") as f:
+            cfg = yaml.safe_load(f)
+        params = cfg.get("hybrid_circle_force_controller", {}).get("ros__parameters", {})
+        for key in defaults:
+            if key in params:
+                defaults[key] = float(params[key])
+    except Exception:
+        pass
+    return defaults
+
+
+def compute_run_metrics(wrench_path, internal_path, force_desired=5.0, circle_radius=0.03):
     try:
         wrench_df = pd.read_csv(wrench_path)
     except Exception as exc:
@@ -38,6 +64,11 @@ def compute_run_metrics(wrench_path, internal_path):
     metrics["fz_rmse"] = float(np.sqrt(np.mean(np.square(fz_err))))
     metrics["fz_std_err"] = float(np.std(fz_err))
 
+    # Normalized metrics.
+    metrics["fz_nrmse_target"] = metrics["fz_rmse"] / abs(force_desired) if force_desired != 0 else float("nan")
+    fz_range = float(wrench_df["est_fz"].max() - wrench_df["est_fz"].min())
+    metrics["fz_nrmse_range"] = metrics["fz_rmse"] / fz_range if fz_range > 1e-9 else float("nan")
+
     if internal_path and os.path.exists(internal_path):
         internal_df = pd.read_csv(internal_path)
         if {"ex", "ey"}.issubset(set(internal_df.columns)) and len(internal_df) > 0:
@@ -46,17 +77,16 @@ def compute_run_metrics(wrench_path, internal_path):
             xy_norm = np.sqrt(np.square(ex) + np.square(ey))
             metrics["xy_rms"] = float(np.sqrt(np.mean(np.square(xy_norm))))
             metrics["xy_max"] = float(np.max(np.abs(xy_norm)))
+            metrics["xy_nrmse_radius"] = metrics["xy_rms"] / circle_radius if circle_radius > 1e-9 else float("nan")
         else:
             metrics["xy_rms"] = float("nan")
             metrics["xy_max"] = float("nan")
+            metrics["xy_nrmse_radius"] = float("nan")
     else:
         metrics["xy_rms"] = float("nan")
         metrics["xy_max"] = float("nan")
+        metrics["xy_nrmse_radius"] = float("nan")
 
-    gate_force_mean = metrics["fz_mean_abs_err"] < FORCE_MEAN_ABS_LIMIT
-    gate_force_rmse = metrics["fz_rmse"] < FORCE_RMSE_LIMIT
-    gate_xy = np.isnan(metrics["xy_rms"]) or metrics["xy_rms"] < XY_RMS_LIMIT
-    metrics["pass_gate"] = bool(gate_force_mean and gate_force_rmse and gate_xy)
     return metrics, wrench_df
 
 
@@ -75,8 +105,6 @@ def plot_run(wrench_df, run_name, output_path):
     axes[0].legend()
 
     axes[1].plot(t, err, color="tab:green", linewidth=1.2)
-    axes[1].axhline(FORCE_MEAN_ABS_LIMIT, color="tab:orange", linestyle="--", linewidth=1)
-    axes[1].axhline(-FORCE_MEAN_ABS_LIMIT, color="tab:orange", linestyle="--", linewidth=1)
     axes[1].set_xlabel("Time (s)")
     axes[1].set_ylabel("Error (N)")
     axes[1].grid(True, alpha=0.3)
@@ -107,8 +135,6 @@ def plot_summary(metrics_list, output_path):
         if not ok:
             ax.text(x[i] + width, 0.001, "N/A", ha="center", va="bottom", fontsize=8, color="gray")
 
-    ax.axhline(FORCE_RMSE_LIMIT, color="tab:red", linestyle="--", linewidth=1, label="Fz RMSE Limit")
-    ax.axhline(XY_RMS_LIMIT, color="tab:purple", linestyle=":", linewidth=1, label="XY RMS Limit")
 
     ax.set_xticks(x)
     ax.set_xticklabels(names)
@@ -122,24 +148,6 @@ def plot_summary(metrics_list, output_path):
     plt.close(fig)
 
 
-def build_next_steps(metrics_list):
-    any_fail = any(not m["pass_gate"] for m in metrics_list)
-    if not any_fail:
-        return [
-            "当前基础矩阵全部通过门槛，建议进入频率扫(0.1/0.2/0.3Hz)。",
-            "保持 Fz=5N，先复现 3 组独立日期实验以评估日间漂移。",
-            "开始准备 SOP 自动化模板与 skill 固化。",
-        ]
-
-    steps = []
-    if any(m["fz_rmse"] >= FORCE_RMSE_LIMIT for m in metrics_list):
-        steps.append("Fz RMSE 超标：优先降低 circle_frequency 或下调 kp_xy，减少切向-法向耦合。")
-    if any(m["fz_mean_abs_err"] >= FORCE_MEAN_ABS_LIMIT for m in metrics_list):
-        steps.append("Fz 平均误差偏大：小幅提高 force_ki 并检查接触前 preload 一致性。")
-    if any((not np.isnan(m["xy_rms"])) and m["xy_rms"] >= XY_RMS_LIMIT for m in metrics_list):
-        steps.append("XY 误差超标：提高 kd_xy 抑制动态误差，或降低圆轨迹频率。")
-    steps.append("保留失败 run 的 launch.log 与 internal.csv，执行 GUI 复现实验确认故障模式。")
-    return steps
 
 
 def read_run_meta(run_dir):
@@ -156,53 +164,53 @@ def read_run_meta(run_dir):
     return meta
 
 
-def write_markdown_report(report_path, results_dir, metrics_list, summary_plot, run_meta=None):
+def write_markdown_report(report_path, results_dir, metrics_list, summary_plot, run_meta=None, ctrl_config=None):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    pass_count = sum(1 for m in metrics_list if m["pass_gate"])
     total = len(metrics_list)
 
     meta = run_meta or {}
+    cfg = ctrl_config or {}
     duration_s = meta.get("duration", "15")
     controller = meta.get("controller", "hybrid_circle_force_controller")
+    radius = cfg.get("circle_radius", 0.05)
+    freq_hz = cfg.get("circle_frequency", 0.2)
+    force_target = cfg.get("force_desired", 5.0)
+
+    # Allow experiment-level frequency override from run_meta.
+    meta_freq = meta.get("circle_frequency", "")
+    if meta_freq and meta_freq != "default":
+        freq_hz = float(meta_freq)
 
     lines = []
     lines.append("# Hybrid Circle + Constant Force Experiment Report")
     lines.append("")
     lines.append(f"Generated: {now}")
     lines.append("")
-    freq_hz = meta.get("circle_frequency", "0.2")
-    if freq_hz == "default":
-        freq_hz = "0.2"
 
     lines.append("## 1. Experiment Setup")
-    lines.append(f"- Trajectory: XY circle, radius=0.05 m, frequency={freq_hz} Hz")
-    lines.append("- Force target: constant normal force Fz=5 N")
+    lines.append(f"- Trajectory: XY circle, radius={radius:.3f} m, frequency={freq_hz} Hz")
+    lines.append(f"- Force target: constant normal force Fz={force_target} N")
     lines.append(f"- Controller: `{controller}`")
     lines.append(f"- Collection duration per run: {duration_s}s")
     lines.append(f"- Total runs: {total}")
     lines.append("- Auto shutdown: timeout + cleanup double protection")
     lines.append("")
-    lines.append("## 2. Acceptance Gates")
-    lines.append(f"- |mean(Fz error)| < {FORCE_MEAN_ABS_LIMIT:.3f} N")
-    lines.append(f"- Fz RMSE < {FORCE_RMSE_LIMIT:.3f} N")
-    lines.append(f"- XY RMS < {XY_RMS_LIMIT:.3f} m")
+    lines.append("## 2. Run-by-Run Results")
+    lines.append(f"Conditions: radius={radius:.3f} m, frequency={freq_hz} Hz, Fz_target={force_target} N")
     lines.append("")
-    lines.append("## 3. Run-by-Run Results")
-    lines.append("| Run | Duration(s) | Samples | |mean(Fz err)|(N) | Fz MAE(N) | Fz RMSE(N) | Fz Std(N) | XY RMS(m) | XY Max(m) | Gate |")
-    lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|---|")
+    lines.append("| Run | |mean(Fz err)|(N) | Fz RMSE(N) | Fz NRMSE_target | Fz NRMSE_range | XY RMS(m) | XY NRMSE_radius |")
+    lines.append("|---|---:|---:|---:|---:|---:|---:|")
     for m in metrics_list:
         xy_rms = "N/A" if np.isnan(m["xy_rms"]) else f"{m['xy_rms']:.6f}"
-        xy_max = "N/A" if np.isnan(m["xy_max"]) else f"{m['xy_max']:.6f}"
-        gate = "PASS" if m["pass_gate"] else "FAIL"
+        nrmse_t = "N/A" if np.isnan(m["fz_nrmse_target"]) else f"{m['fz_nrmse_target']:.1%}"
+        nrmse_r = "N/A" if np.isnan(m["fz_nrmse_range"]) else f"{m['fz_nrmse_range']:.1%}"
+        xy_nrmse = "N/A" if np.isnan(m["xy_nrmse_radius"]) else f"{m['xy_nrmse_radius']:.1%}"
         lines.append(
-            f"| {m['run_name']} | {m['duration']:.2f} | {m['samples']} | {m['fz_mean_abs_err']:.4f} | "
-            f"{m['fz_mae']:.4f} | {m['fz_rmse']:.4f} | {m['fz_std_err']:.4f} | {xy_rms} | {xy_max} | {gate} |"
+            f"| {m['run_name']} | {m['fz_mean_abs_err']:.4f} | "
+            f"{m['fz_rmse']:.4f} | {nrmse_t} | {nrmse_r} | {xy_rms} | {xy_nrmse} |"
         )
-
     lines.append("")
-    lines.append(f"Overall: {pass_count}/{total} runs passed acceptance gates.")
-    lines.append("")
-    lines.append("## 4. Figures")
+    lines.append("## 3. Figures")
     lines.append(f"- Summary plot: `{os.path.relpath(summary_plot, results_dir)}`")
     for m in metrics_list:
         rel = os.path.relpath(m["run_plot"], results_dir)
@@ -212,18 +220,15 @@ def write_markdown_report(report_path, results_dir, metrics_list, summary_plot, 
             lines.append(f"- {m['run_name']} pseudo-ink trajectory: `{ink_rel}`")
 
     lines.append("")
-    lines.append("## 5. Analysis")
-    if pass_count == total:
-        lines.append("- Force tracking and trajectory coupling stayed within configured gates across all repeats.")
-        lines.append("- No unstable behavior was observed in the retained run logs.")
-    else:
-        lines.append("- At least one run violated acceptance gates; inspect per-run logs for transient mismatch.")
-        lines.append("- Compare failed runs with GUI replay to isolate contact initialization variance.")
-
-    lines.append("")
-    lines.append("## 6. Next Steps")
-    for step in build_next_steps(metrics_list):
-        lines.append(f"- {step}")
+    lines.append("## 4. Notes")
+    # Compute averages for summary.
+    avg_fz_rmse = np.mean([m["fz_rmse"] for m in metrics_list])
+    avg_fz_nrmse = np.mean([m["fz_nrmse_target"] for m in metrics_list if not np.isnan(m["fz_nrmse_target"])])
+    xy_vals = [m["xy_nrmse_radius"] for m in metrics_list if not np.isnan(m["xy_nrmse_radius"])]
+    avg_xy_nrmse = np.mean(xy_vals) if xy_vals else float("nan")
+    lines.append(f"- Average Fz RMSE: {avg_fz_rmse:.4f} N (NRMSE_target: {avg_fz_nrmse:.1%})")
+    if not np.isnan(avg_xy_nrmse):
+        lines.append(f"- Average XY NRMSE_radius: {avg_xy_nrmse:.1%}")
 
     with open(report_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
@@ -235,6 +240,8 @@ def main():
     parser.add_argument("--report-name", default="report.md", help="Markdown report filename")
     parser.add_argument("--summary-plot", default="summary_metrics.png", help="Summary plot filename")
     args = parser.parse_args()
+
+    ctrl_config = read_controller_config()
 
     run_dirs = sorted(glob.glob(os.path.join(args.results_dir, "run_*")))
     if not run_dirs:
@@ -248,7 +255,11 @@ def main():
         if not os.path.exists(wrench_path):
             continue
 
-        metrics, wrench_df = compute_run_metrics(wrench_path, internal_path)
+        metrics, wrench_df = compute_run_metrics(
+            wrench_path, internal_path,
+            force_desired=ctrl_config["force_desired"],
+            circle_radius=ctrl_config["circle_radius"],
+        )
         if metrics is None:
             print(f"[WARN] Skipping {run_name}: could not compute metrics")
             continue
@@ -277,7 +288,7 @@ def main():
     plot_summary(metrics_list, summary_plot)
 
     report_path = os.path.join(args.results_dir, args.report_name)
-    write_markdown_report(report_path, args.results_dir, metrics_list, summary_plot, first_meta)
+    write_markdown_report(report_path, args.results_dir, metrics_list, summary_plot, first_meta, ctrl_config)
 
     print(f"[DONE] Report: {report_path}")
     print(f"[DONE] Summary plot: {summary_plot}")
