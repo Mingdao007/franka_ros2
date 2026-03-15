@@ -1,37 +1,91 @@
 # Current State (FR3 Hybrid Circle Force Project)
 
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Ignition Gazebo 6 (Fortress)                            │
+│  ┌──────────┐  ┌───────────┐  ┌───────────────────────┐ │
+│  │ Physics   │  │ ForceTorque│  │ FR3 + ball_tip       │ │
+│  │ (ODE/DART)│  │ System     │  │ 7-DOF + fixed EE     │ │
+│  └──────────┘  └─────┬─────┘  └───────────────────────┘ │
+│                      │ gz.msgs.Wrench                    │
+└──────────────────────┼──────────────────────────────────┘
+                       │
+              ┌────────┴────────┐
+              │ ros_gz_bridge   │
+              │ parameter_bridge│
+              └────────┬────────┘
+                       │ /ft_sensor_data (geometry_msgs/Wrench)
+                       ▼
+┌──────────────────────────────────────────────────────────┐
+│ hybrid_circle_force_controller (1 kHz)                   │
+│                                                          │
+│  ┌──────────────┐    ┌──────────────┐                    │
+│  │ Force Sensing │    │ Pinocchio    │                    │
+│  │ FT sub or     │    │ FK/Jacobian  │                    │
+│  │ J-based est.  │    │              │                    │
+│  └──────┬───────┘    └──────┬───────┘                    │
+│         │                   │                            │
+│  ┌──────▼───────────────────▼──────┐                     │
+│  │ State Machine                    │                    │
+│  │  Descent (impedance) → Circle   │                    │
+│  │  transition: |Fz| > threshold   │                    │
+│  └──────┬──────────────────────────┘                     │
+│         │                                                │
+│  ┌──────▼──────────────────────────┐                     │
+│  │ Hybrid Control Law              │                    │
+│  │  XY: PID position tracking      │                    │
+│  │  Z:  PID force regulation       │                    │
+│  │  τ = J^T F_cmd + N(-D dq)      │                    │
+│  └──────┬──────────────────────────┘                     │
+│         │ effort commands                                │
+└─────────┼────────────────────────────────────────────────┘
+          ▼
+    7 joint effort interfaces
+```
+
+## Control Law Details
+
+### Descent Phase
+- Pure impedance control: `F = Kp * e + Ki * ∫e + Kd * ė` in all 3 axes
+- Fixed downward velocity reference: `z_des = z0 - v_descent * t`
+- Transition condition: `|Fz_filtered| > descent_contact_force`
+
+### Circle Phase
+- XY: PID position tracking of circular trajectory `(cx + r*cos(ωt), cy + r*sin(ωt))`
+- Z: PID force regulation `u = Kp*(Fd - Fm) + Ki*∫e + Kd*ė`, applied as `Fz_cmd = sign * (Fd + u)`
+- Null-space: joint damping `N * (-D * dq)`
+- Torque rate saturation: `Δτ_max = 1.0 Nm/step`
+- Cosine soft-start ramp: C1-continuous radius ramp
+
+### Force Estimation (dual mode)
+1. **Jacobian-based** (default): `F = (JJ^T + λ²I)^{-1} J (τ_meas - τ_gravity - bias)`
+2. **FT sensor**: Subscribe to `/ft_sensor_data`, rotate from child frame to world: `F_world = R * F_local`
+
+## Simulation Environment
+- Ignition Gazebo 6 (Fortress) on Ubuntu 22.04 / ROS 2 Humble
+- Physics: default (ODE), 1ms step
+- End-effector: custom ball tip (fixed joint, 0.1 kg, sphere r=15mm)
+- Contact surface: compliant pad (kp=20000, kd=100) + paper layer on table (z=0.416m)
+
 ## Verified status
 | Item | Status | Evidence |
 |---|---|---|
-| Core pipeline (controller + launch + script + report) | ✅ Done | `hybrid_circle_force_controller.cpp`, `gazebo_hybrid_circle_force.launch.py`, `run_hybrid_circle_force_experiment.sh`, `generate_hybrid_experiment_report.py` |
-| Baseline acceptance gate pass | ✅ Done | `results/hybrid_circle_force/20260315_032904/report.md` |
-| Launch startup speed (3s activation) | ✅ Fixed | Reduced `TimerAction` delays from 5.0/6.0s to 0.5/1.5s in launch file |
-| Gazebo ignition dependencies | ✅ Removed | CMakeLists.txt no longer depends on `ignition-msgs8` / `ignition-transport11` |
-| RViz ink trail (measured + desired) | ✅ Done | Blue (measured, force-gated) + Red (desired, always) LINE_STRIP markers via `visualization_msgs` |
-| Descent phase (impedance → force) | ✅ Done | High-stiffness impedance descent, transitions to hybrid force/position on contact detection |
-| Cosine soft-start ramp | ✅ Done | C1-continuous radius ramp, no velocity discontinuity at transition |
-| Dedicated RViz config | ✅ Done | `hybrid_circle_force.rviz` with world frame, top-down view, both marker displays |
-| Orientation control (redundancy) | ❌ Reverted | Attempted with cross-product error, caused instability. Needs proper sign analysis and testing |
-| Periodic stutter at one angle | Open (low priority) | Ruled out: trajectory, Jacobian, PID, torque saturation, contact surface, logging, joint friction. Root cause unconfirmed; suspected simulation-level behavior |
-| Frequency sweep (0.1/0.2/0.3 Hz) | ❌ Pending | |
-| Multi-day repeatability | ❌ Pending | |
-| Real robot transfer SOP | ❌ Pending | |
-
-## Controller architecture
-```
-Phase 1: kDescent
-  - XY: high-stiffness impedance (kp=6000, kd=200), hold initial position
-  - Z: impedance control, descend at 0.02 m/s
-  - Transition: |Fz| > descent_contact_force (2.0N)
-
-Phase 2: kCircle
-  - XY: PD tracking of circle trajectory (cosine soft-start ramp)
-  - Z: force PID (track force_desired)
-  - Null-space: joint damping
-  - Torque rate saturation: 1.0 Nm/cycle (safety, do not relax)
-```
+| Core pipeline (controller + launch + script + report) | ✅ Done | Full experiment chain verified |
+| Baseline gate pass (0.1Hz) | ✅ Done | Fz RMSE ~0.42N, XY NRMSE ~7.5% |
+| 0.2Hz also passes gates | ✅ Done | |
+| Launch startup speed (3s activation) | ✅ Fixed | `TimerAction` 0.5/1.5s |
+| RViz ink trail (measured + desired) | ✅ Done | Blue + Red LINE_STRIP markers |
+| Descent → circle state machine | ✅ Done | Cosine soft-start, phase column in CSV |
+| Top-level package synced | ✅ Done | symlink-install, runtime = top-level source YAML |
+| Experiment infra: config path + meta snapshot | ✅ Done | A1+A2 fix verified 2026-03-15 |
+| Analytical D-term (feature/analytical-d-term) | ✅ Feasible | Equivalent to numerical D at 0.1Hz, not merged |
+| FT sensor | ❌ Abandoned | ign-gazebo-6 plugin compat issues |
+| Orientation control | ❌ Reverted | Sign error caused instability, queued for retry |
+| Frequency sweep 0.3+ Hz | ❌ Pending | |
 
 ## Important note on consistency
-- Always report exact file path and timestamped run directory.
-- If report text and runtime parameter files disagree, treat controller config and run artifacts as source of truth for executed behavior.
-- Metric policy: do not use MSE in reports; use RMSE and normalized RMSE variants.
+- Runtime config: `src/franka_gazebo_bringup/config/franka_gazebo_controllers.yaml` (symlink-installed)
+- Inner dev config (`franka_gazebo/franka_gazebo_bringup/...`) is NOT read at runtime
+- YAML changes take effect immediately, only C++ changes need rebuild

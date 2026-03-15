@@ -101,11 +101,17 @@ Detailed commands and interpretation:
 
 ## Response contract
 When using this skill, return:
-1. What was run (exact command and duration).
-2. What evidence was used (report path, run path, key logs).
-3. Gate results and key metrics.
-4. Root-cause hypothesis (if failed).
-5. Next single best action.
+1. **Full experimental conditions** before any results table:
+   - Trajectory: frequency, radius
+   - Force: force_desired
+   - XY gains: kp_xy, kd_xy, ki_xy
+   - Force gains: force_kp, force_ki, force_kd
+   - Any parameter that differs from baseline must be explicitly called out
+2. What was run (exact command and duration).
+3. What evidence was used (report path, run path, key logs).
+4. Gate results and key metrics.
+5. Root-cause hypothesis (if failed).
+6. Next single best action.
 
 ## Reference index
 - `references/current-state.md`
