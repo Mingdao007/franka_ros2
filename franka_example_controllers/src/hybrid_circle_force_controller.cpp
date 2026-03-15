@@ -550,16 +550,18 @@ controller_interface::return_type HybridCircleForceController::update(
     if (iy_state_ > i_limit_xy_) iy_state_ = i_limit_xy_;
     if (iy_state_ < -i_limit_xy_) iy_state_ = -i_limit_xy_;
 
-    // XY PID: filtered derivative of position error.
-    const double dex_raw = (dt > 1e-9) ? (ex - ex_prev_) / dt : 0.0;
-    const double dey_raw = (dt > 1e-9) ? (ey - ey_prev_) / dt : 0.0;
-    dex_filtered_ = d_filter_alpha_xy_ * dex_filtered_ + (1.0 - d_filter_alpha_xy_) * dex_raw;
-    dey_filtered_ = d_filter_alpha_xy_ * dey_filtered_ + (1.0 - d_filter_alpha_xy_) * dey_raw;
-    ex_prev_ = ex;
-    ey_prev_ = ey;
+    // Analytical desired velocity (derivative of circle trajectory + soft-start ramp).
+    // dr/dt from cosine ramp: d/dt[0.5*(1-cos(pi*t/T))] = 0.5*(pi/T)*sin(pi*t/T)
+    const double drdt = (elapsed_time_ < soft_start_duration_)
+        ? circle_radius_ * 0.5 * (M_PI / soft_start_duration_)
+              * std::sin(M_PI * elapsed_time_ / soft_start_duration_)
+        : 0.0;
+    const double vx_des = drdt * std::cos(phi) - r * omega * std::sin(phi);
+    const double vy_des = drdt * std::sin(phi) + r * omega * std::cos(phi);
 
-    const double fx_cmd = kp_xy_ * ex + ki_xy_ * ix_state_ + kd_xy_ * dex_filtered_;
-    const double fy_cmd = kp_xy_ * ey + ki_xy_ * iy_state_ + kd_xy_ * dey_filtered_;
+    // D-term: Kd * (desired velocity - measured velocity).
+    const double fx_cmd = kp_xy_ * ex + ki_xy_ * ix_state_ + kd_xy_ * (vx_des - v_ee(0));
+    const double fy_cmd = kp_xy_ * ey + ki_xy_ * iy_state_ + kd_xy_ * (vy_des - v_ee(1));
 
     const double e_force = force_desired_ - fz_meas;
 

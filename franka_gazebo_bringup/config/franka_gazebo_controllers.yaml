@@ -77,7 +77,7 @@
       circle_center_offset_x: 0.0
       circle_center_offset_y: 0.0
       kp_xy: 4000.0
-      kd_xy: 160.0
+      kd_xy: 80.0
       ki_xy: 500.0
       i_limit_xy: 0.5
       d_filter_alpha_xy: 0.5
