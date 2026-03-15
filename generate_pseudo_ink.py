@@ -69,7 +69,7 @@ def plot_pseudo_ink(
         fz_norm = (fz - fz_min) / fz_range
 
     # Map to line widths and colors.
-    widths = 0.5 + 3.0 * fz_norm[:-1]  # per-segment
+    widths = 0.25 + 1.5 * fz_norm[:-1]  # per-segment (half width)
     cmap = plt.get_cmap(colormap)
     # Shift range to [0.3, 1.0] so lightest ink is still visible.
     colors = cmap(0.3 + 0.7 * fz_norm[:-1])
@@ -81,9 +81,9 @@ def plot_pseudo_ink(
     fig, ax = plt.subplots(figsize=(7, 7), facecolor="white")
     ax.set_facecolor("white")
 
-    # Reference circle (desired trajectory).
-    ax.plot(x_des, y_des, color="gray", linewidth=0.8, linestyle="--",
-            alpha=0.5, label="Desired", zorder=1)
+    # Reference circle (desired trajectory) — subtle background guide.
+    ax.plot(x_des, y_des, color="gray", linewidth=0.6, linestyle="--",
+            alpha=0.3, label="Desired", zorder=1)
 
     # Pseudo-ink trajectory.
     lc = LineCollection(segments, linewidths=widths, colors=colors, zorder=2)
