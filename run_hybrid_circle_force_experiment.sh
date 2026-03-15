@@ -9,9 +9,12 @@ SRC_ROOT="${WORKSPACE_ROOT}/src"
 RESULT_BASE="${SRC_ROOT}/results/hybrid_circle_force"
 CONTROLLER_NAME="hybrid_circle_force_controller"
 CONTROLLER_LOG_PATH="${WORKSPACE_ROOT}/hybrid_circle_force_log.csv"
-CONFIG_FILE="${SRC_ROOT}/franka_gazebo/franka_gazebo_bringup/config/franka_gazebo_controllers.yaml"
+# Top-level config (installed by colcon, loaded by Gazebo launch).
+CONFIG_FILE="${SRC_ROOT}/franka_gazebo_bringup/config/franka_gazebo_controllers.yaml"
+# Inner dev config (source of truth during development).
+CONFIG_FILE_DEV="${SRC_ROOT}/franka_gazebo/franka_gazebo_bringup/config/franka_gazebo_controllers.yaml"
 
-REPEATS="${REPEATS:-3}"
+REPEATS="${REPEATS:-1}"
 DURATION="${DURATION:-15}"
 POLL_TIMEOUT="${POLL_TIMEOUT:-20}"
 RUN_TIMEOUT="${RUN_TIMEOUT:-50}"
@@ -26,7 +29,9 @@ mkdir -p "${RESULT_DIR}"
 # Override circle_frequency in YAML if FREQUENCY is set.
 if [[ -n "${FREQUENCY}" ]]; then
   sed -i "/^    circle_frequency:/s/: [0-9.]\+/: ${FREQUENCY}/" "${CONFIG_FILE}"
-  echo "[INFO] Overrode circle_frequency to ${FREQUENCY} Hz in ${CONFIG_FILE}"
+  # Sync inner dev config too.
+  sed -i "/^    circle_frequency:/s/: [0-9.]\+/: ${FREQUENCY}/" "${CONFIG_FILE_DEV}"
+  echo "[INFO] Overrode circle_frequency to ${FREQUENCY} Hz in both config files"
 fi
 
 ts() { date +%s; }
@@ -131,6 +136,10 @@ for run_idx in $(seq 1 "${REPEATS}"); do
     echo "[WARN] Missing controller internal log: ${CONTROLLER_LOG_PATH}" | tee -a "${run_dir}/run_status.txt"
   fi
 
+  # Snapshot normalization parameters from the config actually used.
+  meta_radius=$(grep 'circle_radius:' "${CONFIG_FILE}" | head -1 | awk '{print $2}')
+  meta_force=$(grep 'force_desired:' "${CONFIG_FILE}" | head -1 | awk '{print $2}')
+
   cat >"${run_dir}/run_meta.txt" <<EOF
 run_index=${run_idx}
 duration=${DURATION}
@@ -140,6 +149,8 @@ poll_time=$((t2 - t1))
 collection_time=$((t3 - t2))
 total_wall_time=$((t4 - t0))
 circle_frequency=${FREQUENCY:-default}
+circle_radius=${meta_radius:-}
+force_desired=${meta_force:-}
 EOF
 
   if [[ -f "${wrench_csv}" ]] && [[ -s "${wrench_csv}" ]]; then

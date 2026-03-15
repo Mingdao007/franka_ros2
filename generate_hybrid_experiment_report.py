@@ -172,9 +172,11 @@ def write_markdown_report(report_path, results_dir, metrics_list, summary_plot, 
     cfg = ctrl_config or {}
     duration_s = meta.get("duration", "15")
     controller = meta.get("controller", "hybrid_circle_force_controller")
-    radius = cfg.get("circle_radius", 0.05)
+
+    # Prefer snapshotted values from run_meta over live YAML.
+    radius = float(meta["circle_radius"]) if meta.get("circle_radius") else cfg.get("circle_radius", 0.05)
     freq_hz = cfg.get("circle_frequency", 0.2)
-    force_target = cfg.get("force_desired", 5.0)
+    force_target = float(meta["force_desired"]) if meta.get("force_desired") else cfg.get("force_desired", 5.0)
 
     # Allow experiment-level frequency override from run_meta.
     meta_freq = meta.get("circle_frequency", "")
@@ -255,10 +257,15 @@ def main():
         if not os.path.exists(wrench_path):
             continue
 
+        # Prefer snapshotted params from run_meta.txt; fallback to live YAML.
+        run_meta = read_run_meta(run_dir)
+        run_radius = float(run_meta["circle_radius"]) if run_meta.get("circle_radius") else ctrl_config["circle_radius"]
+        run_force = float(run_meta["force_desired"]) if run_meta.get("force_desired") else ctrl_config["force_desired"]
+
         metrics, wrench_df = compute_run_metrics(
             wrench_path, internal_path,
-            force_desired=ctrl_config["force_desired"],
-            circle_radius=ctrl_config["circle_radius"],
+            force_desired=run_force,
+            circle_radius=run_radius,
         )
         if metrics is None:
             print(f"[WARN] Skipping {run_name}: could not compute metrics")

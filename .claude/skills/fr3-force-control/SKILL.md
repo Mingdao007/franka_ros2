@@ -41,27 +41,44 @@ This skill is optimized for:
 
 ## Current progress snapshot
 - ✅ Core pipeline: controller + launch + batch experiment + report generation.
-- ✅ Baseline gate pass observed in retained reports.
+- ✅ Baseline gate pass: Fz RMSE 0.40N, XY NRMSE 7.2% (0.1Hz).
+- ✅ 0.2Hz also passes gates.
 - ✅ Launch startup speed fixed (3s activation).
-- ✅ RViz ink trail: measured (blue) + desired (red) LINE_STRIP via `visualization_msgs::msg::Marker`.
-- ✅ Descent phase: high-stiffness impedance control descends to surface, transitions to circle on contact.
-- ✅ Cosine soft-start ramp: C1-continuous radius ramp (no velocity discontinuity).
-- ✅ Gazebo ignition dependencies fully removed (was Fortress-incompatible, now pure ROS 2).
-- ❌ Orientation control (redundancy exploitation): attempted, sign error caused instability, reverted. Needs proper analysis.
-- ❌ Small periodic stutter in Gazebo at one angle: under investigation, likely contact dynamics.
-- ❌ Frequency sweep matrix (0.1/0.2/0.3 Hz) not fully completed.
-- ❌ Real-robot transfer procedure not completed.
+- ✅ RViz ink trail: measured (blue) + desired (red) LINE_STRIP.
+- ✅ Descent → circle state machine with cosine soft-start radius ramp.
+- ✅ CSV log with phase column for descent/circle analysis.
+- ✅ Top-level package synced (launch, world, config, rviz all installed).
+- ✅ FT sensor attempted and abandoned (ign-gazebo-6 plugin compat issues).
+- 🔄 Phase 2 improvements in progress (force ramp, dwell-time, D-term, orientation).
+- ❌ Orientation control: attempted, sign error caused instability, reverted. Queued for retry.
+- ❌ Frequency sweep at 0.3+ Hz not fully analyzed.
 
 For details and evidence, read:
 - `references/current-state.md`
 - `references/file-map.md`
 
 ## Execution protocol (fast loop)
-1. Confirm current status and constraints from `references/current-state.md`.
-2. Run one short baseline experiment first, then inspect generated report.
-3. If gates fail, use troubleshooting mapping to adjust only the most likely parameters.
-4. Re-run quickly with minimal changes. Keep one variable change per run when possible.
-5. Summarize outcome with metrics, evidence paths, and next action.
+1. Make one scoped change, build.
+2. Verify by running the automated experiment script (NOT manual `ros2 launch`):
+   ```bash
+   cd /home/andy/franka_ros2_ws/src
+   source /home/andy/franka_ros2_ws/install/setup.bash
+   bash run_hybrid_circle_force_experiment.sh
+   ```
+   This runs 1 sim (15s), collects data, generates `report.md` with metrics.
+3. User shares report. Claude interprets: compare against baseline, flag regressions.
+4. If gates fail, adjust only the most likely parameter. One variable per run.
+5. Commit + push when verified.
+
+**Baseline reference (0.1Hz, 0.03m radius):**
+- Fz RMSE: 0.40 N (8.0% of 5N target)
+- |mean(Fz error)|: 0.12 N
+- XY NRMSE: 7.2% of radius
+
+**Acceptance gates:**
+- `|mean(Fz error)| < 0.300 N`
+- `Fz RMSE < 0.600 N`
+- `XY RMS < 0.005 m`
 
 Detailed commands and interpretation:
 - `references/validated-workflow.md`

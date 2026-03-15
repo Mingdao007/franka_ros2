@@ -325,7 +325,7 @@ CallbackReturn HybridCircleForceController::on_activate(
   if (!log_file_path_.empty()) {
     log_file_.open(log_file_path_);
     if (log_file_.is_open()) {
-      log_file_ << "time,x_des,y_des,x_meas,y_meas,ex,ey,fz_des,fz_meas,fz_cmd\n";
+      log_file_ << "time,x_des,y_des,x_meas,y_meas,ex,ey,fz_des,fz_meas,fz_cmd,phase\n";
       RCLCPP_INFO(get_node()->get_logger(), "Logging started: %s", log_file_path_.c_str());
     } else {
       RCLCPP_WARN(get_node()->get_logger(), "Failed to open log file: %s", log_file_path_.c_str());
@@ -709,7 +709,8 @@ controller_interface::return_type HybridCircleForceController::update(
   if (log_file_.is_open()) {
     log_file_ << elapsed_time_ << "," << x_des << "," << y_des << "," << p_ee(0) << ","
               << p_ee(1) << "," << ex << "," << ey << "," << force_desired_ << ","
-              << fz_meas << "," << fz_cmd << "\n";
+              << fz_meas << "," << fz_cmd << ","
+              << (phase_ == Phase::kDescent ? 0 : 1) << "\n";
   }
 
   return controller_interface::return_type::OK;
