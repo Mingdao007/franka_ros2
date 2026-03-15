@@ -24,6 +24,9 @@
       gravity_compensation_example_controller:
         type: franka_example_controllers/GravityCompensationExampleController
 
+      hybrid_circle_force_controller:
+        type: franka_example_controllers/HybridCircleForceController
+
 /**:
   joint_position_example_controller:
     ros__parameters:
@@ -55,7 +58,56 @@
         - 1.0
         - 0.5
 
-/**:  
+/**:
   mobile_cartesian_velocity_with_ik_example_controller:
     ros__parameters:
       robot_type: "tmrv0_2"
+
+/**:
+  hybrid_circle_force_controller:
+    ros__parameters:
+      arm_id: "fr3"
+      gazebo: true
+      ee_link: "fr3_ball_tip_tcp"
+      wrench_frame_id: "world"
+      pub_decimation: 1
+      circle_radius: 0.03
+      circle_frequency: 0.1
+      use_current_pose_as_center: true
+      circle_center_offset_x: 0.0
+      circle_center_offset_y: 0.0
+      kp_xy: 4000.0
+      kd_xy: 160.0
+      ki_xy: 500.0
+      i_limit_xy: 0.5
+      d_filter_alpha_xy: 0.5
+      force_desired: 5.0
+      force_kp: 0.02
+      force_ki: 0.005
+      force_kd: 0.008
+      i_limit: 10.0
+      max_force_command: 60.0
+      command_sign: -1.0
+      force_filter_alpha: 0.80
+      d_filter_alpha: 0.5
+      lambda: 0.01
+      use_bias_calibration: false
+      descent_kp_xy: 6000.0
+      descent_kd_xy: 200.0
+      descent_kp_z: 2000.0
+      descent_kd_z: 80.0
+      descent_ki_xy: 0.0
+      descent_ki_z: 0.0
+      descent_speed: 0.05
+      descent_contact_force: 2.0
+      joint_damping: [8.0, 8.0, 8.0, 8.0, 5.0, 4.0, 2.0]
+      log_file_path: "/home/andy/franka_ros2_ws/hybrid_circle_force_log.csv"
+      ink_enabled: true
+      ink_trail_decimation: 50
+      ink_force_threshold: 1.0
+      ink_line_width: 0.001
+      ink_max_points: 5000
+      ink_project_to_surface: true
+      ink_surface_z: 0.4160
+      ink_surface_epsilon: 0.0005
+      ink_contact_offset_z: -0.03

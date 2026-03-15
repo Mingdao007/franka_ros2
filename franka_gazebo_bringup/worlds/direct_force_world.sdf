@@ -1,0 +1,270 @@
+<?xml version="1.0" ?>
+<sdf version="1.7">
+  <world name="direct_force_world">
+    <gravity>0 0 -9.81</gravity>
+
+    <!-- ============================================================ -->
+    <!-- GUI: Ignition Gazebo plugin-based configuration              -->
+    <!-- ============================================================ -->
+    <gui fullscreen="0">
+      <!-- 3D viewport with initial camera pose -->
+      <plugin filename="MinimalScene" name="3D View">
+        <gz-gui>
+          <title>3D View</title>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="state" type="string">docked</property>
+        </gz-gui>
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <ambient_light>0.4 0.4 0.4</ambient_light>
+        <background_color>0.8 0.8 0.8</background_color>
+        <!-- Close-up front-right view: see table + arm + pad -->
+        <camera_pose>1.0 0.6 0.75 0 0.35 -2.5</camera_pose>
+      </plugin>
+
+      <!-- Required scene management plugins -->
+      <plugin filename="GzSceneManager" name="Scene Manager">
+        <gz-gui>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="InteractiveViewControl" name="Interactive view control">
+        <gz-gui>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="CameraTracking" name="Camera Tracking">
+        <gz-gui>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+
+      <!-- MarkerManager: loaded via gz_gui.config (single authoritative source) -->
+
+      <!-- Play/pause/step controls -->
+      <plugin filename="WorldControl" name="World control">
+        <gz-gui>
+          <title>World control</title>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">72</property>
+          <property key="height" type="double">121</property>
+          <property key="z" type="double">1</property>
+          <property key="state" type="string">floating</property>
+          <anchors target="3D View">
+            <line own="left" target="left"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </gz-gui>
+        <play_pause>true</play_pause>
+        <step>true</step>
+      </plugin>
+
+      <!-- Sim time / real-time factor display -->
+      <plugin filename="WorldStats" name="World stats">
+        <gz-gui>
+          <title>World stats</title>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">110</property>
+          <property key="height" type="double">54</property>
+          <property key="z" type="double">1</property>
+          <property key="state" type="string">floating</property>
+          <anchors target="3D View">
+            <line own="right" target="right"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </gz-gui>
+        <sim_time>true</sim_time>
+        <real_time>true</real_time>
+        <real_time_factor>true</real_time_factor>
+      </plugin>
+
+      <!-- Entity tree (left sidebar) -->
+      <plugin filename="EntityTree" name="Entity tree">
+        <gz-gui>
+          <property key="state" type="string">docked_collapsed</property>
+        </gz-gui>
+      </plugin>
+    </gui>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <!-- Simple ground plane -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>20 20</size>
+            </plane>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1.0</mu>
+                <mu2>1.0</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+          <visual name="visual">
+            <geometry>
+              <plane>
+                <normal>0 0 1</normal>
+                <size>100 100</size> </plane>
+            </geometry>
+            <material>
+              <ambient>0.8 0.8 0.8 1</ambient>
+              <diffuse>0.8 0.8 0.8 1</diffuse>
+              <specular>0.8 0.8 0.8 1</specular>
+            </material>
+          </visual>
+      </link>
+    </model>
+
+    <!-- A static table base (top surface at z = 0.40 m) -->
+    <model name="table">
+      <static>true</static>
+      <pose>0.55 0 0.20 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>0.8 1.0 0.40</size>
+            </box>
+          </geometry>
+          <surface>
+            <contact>
+              <ode>
+                <kp>1e6</kp>
+                <kd>100.0</kd>
+              </ode>
+            </contact>
+            <friction>
+              <ode>
+                <mu>1.0</mu>
+                <mu2>1.0</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.8 1.0 0.40</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.5 0.35 0.2 1</ambient>
+            <diffuse>0.6 0.4 0.2 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ============================================================ -->
+    <!-- Compliant Contact Surface (弹性接触面)                        -->
+    <!-- Thin rubber pad on top of the table                           -->
+    <!-- ============================================================ -->
+    <model name="compliant_pad">
+      <static>true</static>
+      <!-- Pad: 15mm thick, centered under robot workspace -->
+      <pose>0.35 0 0.4075 0 0 0</pose>
+      <link name="pad_link">
+        <collision name="pad_collision">
+          <geometry>
+            <box>
+              <size>0.50 0.50 0.015</size>
+            </box>
+          </geometry>
+          <surface>
+            <contact>
+              <ode>
+                <kp>20000.0</kp>
+                <kd>100.0</kd>
+                <max_vel>0.1</max_vel>
+                <min_depth>0.001</min_depth>
+              </ode>
+            </contact>
+            <friction>
+              <ode>
+                <mu>1.0</mu>
+                <mu2>1.0</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="pad_visual">
+          <geometry>
+            <box>
+              <size>0.50 0.50 0.015</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.2 0.4 0.8 1</ambient>
+            <diffuse>0.3 0.5 0.9 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- White paper on top of the pad (for ink trail visualization) -->
+    <!-- Top surface at z = 0.4160 (pad top 0.415 + paper 0.001) -->
+    <model name="drawing_paper">
+      <static>true</static>
+      <pose>0.35 0 0.4155 0 0 0</pose>
+      <link name="paper_link">
+        <collision name="paper_collision">
+          <geometry>
+            <box>
+              <size>0.48 0.48 0.001</size>
+            </box>
+          </geometry>
+          <surface>
+            <contact>
+              <ode>
+                <kp>50000.0</kp>
+                <kd>50.0</kd>
+              </ode>
+            </contact>
+            <friction>
+              <ode>
+                <mu>0.8</mu>
+                <mu2>0.8</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="paper_visual">
+          <geometry>
+            <box>
+              <size>0.48 0.48 0.001</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.95 0.95 0.95 1</ambient>
+            <diffuse>1.0 1.0 1.0 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+  </world>
+</sdf>
