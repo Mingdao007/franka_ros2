@@ -9,10 +9,8 @@ SRC_ROOT="${WORKSPACE_ROOT}/src"
 RESULT_BASE="${SRC_ROOT}/results/hybrid_circle_force"
 CONTROLLER_NAME="hybrid_circle_force_controller"
 CONTROLLER_LOG_PATH="${WORKSPACE_ROOT}/hybrid_circle_force_log.csv"
-# Top-level config (installed by colcon, loaded by Gazebo launch).
+# Top-level config — runtime file (symlink-install makes install/share point here).
 CONFIG_FILE="${SRC_ROOT}/franka_gazebo_bringup/config/franka_gazebo_controllers.yaml"
-# Inner dev config (source of truth during development).
-CONFIG_FILE_DEV="${SRC_ROOT}/franka_gazebo/franka_gazebo_bringup/config/franka_gazebo_controllers.yaml"
 
 REPEATS="${REPEATS:-1}"
 DURATION="${DURATION:-15}"
@@ -29,9 +27,7 @@ mkdir -p "${RESULT_DIR}"
 # Override circle_frequency in YAML if FREQUENCY is set.
 if [[ -n "${FREQUENCY}" ]]; then
   sed -i "/^    circle_frequency:/s/: [0-9.]\+/: ${FREQUENCY}/" "${CONFIG_FILE}"
-  # Sync inner dev config too.
-  sed -i "/^    circle_frequency:/s/: [0-9.]\+/: ${FREQUENCY}/" "${CONFIG_FILE_DEV}"
-  echo "[INFO] Overrode circle_frequency to ${FREQUENCY} Hz in both config files"
+  echo "[INFO] Overrode circle_frequency to ${FREQUENCY} Hz in ${CONFIG_FILE}"
 fi
 
 ts() { date +%s; }
