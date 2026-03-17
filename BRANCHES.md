@@ -19,13 +19,13 @@ All controllers share the `HybridCircleForceController` base with Pinocchio dyna
 
 | Branch | Status | Description | Key Files |
 |--------|--------|-------------|-----------|
-| `feature/koopman-v1` | Done | 5-method ablation (DMD, Linear, Linear-d, EDMD, EDMD-d). Paper branch. | `koopman/{preprocess,baselines,edmd,evaluate}.py` |
-| `feature/koopman-v1-ood` | WIP | Out-of-distribution evaluation of v1 models. | `koopman/evaluate_ood.py` |
-| `feature/narx-comparison` | Done | NARX MLP baseline vs EDMD-d on M1 rollout. | `koopman/{narx,evaluate_narx}.py` |
+| `feature/koopman-v1` | Done | Per-mode comparison: Persistence vs ARX vs EDMD. Paper branch. | `koopman/{preprocess,baselines,edmd,evaluate}.py` |
+| `feature/koopman-v1-ood` | WIP | OOD evaluation (placeholder — scripts not yet committed). | `koopman/evaluate_ood.py` (planned) |
+| `feature/narx-comparison` | Done | NARX MLP baseline vs EDMD on M1 rollout. | `koopman/{narx,evaluate_narx}.py` |
 
 ## Learned-Extension Branches (all closed)
 
-Experimental extensions to EDMD-d with learned lifting / residual correction. All branch from `feature/koopman-v1`.
+Experimental extensions to EDMD with learned lifting / residual correction. All branch from `feature/koopman-v1`. **None outperformed hand-crafted EDMD.** See shared README on `feature/learned-edmd`.
 
 | Branch | Description |
 |--------|-------------|
@@ -37,7 +37,7 @@ Experimental extensions to EDMD-d with learned lifting / residual correction. Al
 | `feature/residual-simerror` | Simulation-error (multi-step rollout) training for residual. |
 | `feature/bohb-residual` | Bayesian optimization (Optuna + Hyperband) of residual hyperparameters. |
 
-Key files: `koopman/{learned_edmd,residual_learned_edmd,bo_residual,evaluate_learned}.py`
+Key scripts (working-tree only, not committed to branches): `koopman/{learned_edmd,residual_learned_edmd,bo_residual,evaluate_learned}.py`
 
 ## Quick Reference
 
