@@ -71,8 +71,8 @@
       ee_link: "fr3_ball_tip_tcp"
       wrench_frame_id: "world"
       pub_decimation: 1
-      circle_radius: 0.03
-      circle_frequency: 0.1
+      circle_radius: 0.02
+      circle_frequency: 0.05
       use_current_pose_as_center: true
       circle_center_offset_x: 0.0
       circle_center_offset_y: 0.0
@@ -81,7 +81,7 @@
       ki_xy: 500.0
       i_limit_xy: 0.5
       d_filter_alpha_xy: 0.5
-      force_desired: 5.0
+      force_desired: 3.0
       force_kp: 0.02
       force_ki: 0.005
       force_kd: 0.008
@@ -107,7 +107,7 @@
       ink_force_threshold: 1.0
       ink_line_width: 0.001
       ink_max_points: 5000
-      ink_project_to_surface: true
-      ink_surface_z: 0.4160
+      ink_project_to_surface: false
+      ink_surface_z: 0.45
       ink_surface_epsilon: 0.0005
       ink_contact_offset_z: -0.03
