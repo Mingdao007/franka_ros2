@@ -1,6 +1,8 @@
-# Learned Koopman Extensions — Experimental (All Closed)
+# Learned Koopman Extensions — Shared Index for Closed Experimental Branches
 
-A series of experiments attempting to improve on hand-crafted EDMD-d by learning the lifting function or adding residual corrections. **None of these approaches outperformed the simple hand-crafted EDMD-d** on M1 rollout, which is why all branches are closed.
+This README is a shared index for 7 closed experimental branches that attempted to improve on hand-crafted EDMD by learning the lifting function or adding residual corrections. **None of these approaches outperformed hand-crafted EDMD** on M1 rollout, which is why all branches are closed.
+
+> **Note:** The scripts listed below (`learned_edmd.py`, `residual_learned_edmd.py`, etc.) are **not committed to any of these branches** — they exist as working-tree files. This README documents the experimental arc, not a runnable branch state.
 
 ## Outcome Summary
 
@@ -39,39 +41,24 @@ s_{t+1} = EDMD-d_base(s̃, u) + r_θ(s̃, u)
 - `residual-simerror` adds multi-step rollout backprop (Phase 1: one-step pretrain, Phase 2: K-step simulation error)
 - `bohb-residual` uses Optuna + Hyperband to search over hidden/layers/lr/weight_decay/sim_error
 
-## Key Files
+## Scripts (not committed — working-tree only)
 
-| File | Role |
-|------|------|
+| Script | Role |
+|--------|------|
 | `learned_edmd.py` | Learned lifting training (MLP + optional delay + optional balanced loss) |
 | `residual_learned_edmd.py` | Residual MLP training (one-step + optional sim-error) |
 | `bo_residual.py` | Bayesian optimization of residual hyperparameters |
 | `evaluate_learned.py` | Unified evaluation of all learned models vs baselines |
 | `plot_results.py` | Comparison figures |
+
+## Committed Files (inherited from v1)
+
+| File | Role |
+|------|------|
 | `preprocess.py` | Shared preprocessing |
+| `baselines.py` | Shared baselines |
 | `edmd.py` | Hand-crafted EDMD (the baseline that won) |
-
-## How to Run
-
-```bash
-# Learned lifting (no delay)
-python /home/andy/franka_ros2_ws/src/koopman/learned_edmd.py
-
-# Learned lifting (with delay + balanced loss)
-python /home/andy/franka_ros2_ws/src/koopman/learned_edmd.py --use-delay --balance-loss
-
-# Residual on EDMD-d base
-python /home/andy/franka_ros2_ws/src/koopman/residual_learned_edmd.py --balance-loss
-
-# Residual with simulation error
-python /home/andy/franka_ros2_ws/src/koopman/residual_learned_edmd.py --balance-loss --sim-error 5
-
-# Bayesian optimization
-python /home/andy/franka_ros2_ws/src/koopman/bo_residual.py --n-trials 30
-
-# Evaluate all
-python /home/andy/franka_ros2_ws/src/koopman/evaluate_learned.py
-```
+| `evaluate.py` | In-distribution evaluation |
 
 ## Lessons Learned
 
