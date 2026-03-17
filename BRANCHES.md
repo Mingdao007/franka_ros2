@@ -37,7 +37,7 @@ Experimental extensions to EDMD with learned lifting / residual correction. All 
 | `feature/residual-simerror` | Simulation-error (multi-step rollout) training for residual. |
 | `feature/bohb-residual` | Bayesian optimization (Optuna + Hyperband) of residual hyperparameters. |
 
-Key scripts (working-tree only, not committed to branches): `koopman/{learned_edmd,residual_learned_edmd,bo_residual,evaluate_learned}.py`
+Canonical hub: `feature/learned-edmd` contains all shared scripts (`learned_edmd.py`, `residual_learned_edmd.py`, `bo_residual.py`, `evaluate_learned.py`).
 
 ## Quick Reference
 
