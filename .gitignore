@@ -24,11 +24,19 @@ koopman/data_ood/
 # Koopman intermediate outputs
 koopman/frames/
 
-# LaTeX build artifacts
+# Koopman local assets
+koopman/*.tex
+koopman/*.bib
+koopman/*.bst
+koopman/*.cls
+koopman/*.pdf
+koopman/*.png
+koopman/figures/
+koopman/fig_*
+koopman/experiment_log.md
 koopman/*.aux
 koopman/*.bbl
 koopman/*.blg
 koopman/*.fdb_latexmk
 koopman/*.fls
 koopman/*.log
-koopman/koopman_report.pdf
