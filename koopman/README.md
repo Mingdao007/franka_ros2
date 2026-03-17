@@ -2,7 +2,7 @@
 
 This README is a shared index for 7 closed experimental branches that attempted to improve on hand-crafted EDMD by learning the lifting function or adding residual corrections. **None of these approaches outperformed hand-crafted EDMD** on M1 rollout, which is why all branches are closed.
 
-> **Note:** The scripts listed below (`learned_edmd.py`, `residual_learned_edmd.py`, etc.) are **not committed to any of these branches** — they exist as working-tree files. This README documents the experimental arc, not a runnable branch state.
+All scripts are committed to this branch (`feature/learned-edmd`) as the canonical hub. Other learned-extension branches share the same base code and can reference this one.
 
 ## Outcome Summary
 
@@ -41,24 +41,40 @@ s_{t+1} = EDMD-d_base(s̃, u) + r_θ(s̃, u)
 - `residual-simerror` adds multi-step rollout backprop (Phase 1: one-step pretrain, Phase 2: K-step simulation error)
 - `bohb-residual` uses Optuna + Hyperband to search over hidden/layers/lr/weight_decay/sim_error
 
-## Scripts (not committed — working-tree only)
+## Key Files
 
-| Script | Role |
-|--------|------|
+| File | Role |
+|------|------|
 | `learned_edmd.py` | Learned lifting training (MLP + optional delay + optional balanced loss) |
 | `residual_learned_edmd.py` | Residual MLP training (one-step + optional sim-error) |
 | `bo_residual.py` | Bayesian optimization of residual hyperparameters |
 | `evaluate_learned.py` | Unified evaluation of all learned models vs baselines |
-| `plot_results.py` | Comparison figures |
+| `preprocess.py` | Shared preprocessing (from v1) |
+| `baselines.py` | Shared baselines (from v1) |
+| `edmd.py` | Hand-crafted EDMD — the baseline that won (from v1) |
+| `evaluate.py` | In-distribution evaluation (from v1) |
 
-## Committed Files (inherited from v1)
+## How to Run
 
-| File | Role |
-|------|------|
-| `preprocess.py` | Shared preprocessing |
-| `baselines.py` | Shared baselines |
-| `edmd.py` | Hand-crafted EDMD (the baseline that won) |
-| `evaluate.py` | In-distribution evaluation |
+```bash
+# Learned lifting (no delay)
+python /home/andy/franka_ros2_ws/src/koopman/learned_edmd.py
+
+# Learned lifting (with delay + balanced loss)
+python /home/andy/franka_ros2_ws/src/koopman/learned_edmd.py --use-delay --balance-loss
+
+# Residual on EDMD-d base
+python /home/andy/franka_ros2_ws/src/koopman/residual_learned_edmd.py --balance-loss
+
+# Residual with simulation error
+python /home/andy/franka_ros2_ws/src/koopman/residual_learned_edmd.py --balance-loss --sim-error 5
+
+# Bayesian optimization
+python /home/andy/franka_ros2_ws/src/koopman/bo_residual.py --n-trials 30
+
+# Evaluate all
+python /home/andy/franka_ros2_ws/src/koopman/evaluate_learned.py
+```
 
 ## Lessons Learned
 
