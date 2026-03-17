@@ -12,7 +12,7 @@ Test whether per-mode EDMD generalizes beyond the training distribution. The in-
 
 | File | Role |
 |------|------|
-| `evaluate_ood.py` | OOD evaluation — tests models on held-out frequency sweeps |
+| `evaluate_ood.py` | OOD evaluation — tests models on data from different circle radius (r=0.05m) |
 | `../run_ood_experiment.sh` | Launches Gazebo with r=0.05m circle for OOD data collection |
 | `preprocess.py` | Shared preprocessing pipeline |
 | `baselines.py` | Shared baseline models |
