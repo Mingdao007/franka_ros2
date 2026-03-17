@@ -1,19 +1,18 @@
-# Koopman v1 — Switched-Mode EDMD for Hybrid Contact Dynamics
+# Koopman v1 — Per-Mode EDMD vs ARX for Hybrid Contact Dynamics
 
-5-method ablation comparing Koopman operator methods for predicting FR3 hybrid contact dynamics across three operating modes (free-space, transition, steady contact).
+Per-mode comparison of Koopman operator (EDMD) against linear baselines for predicting FR3 hybrid contact dynamics across three operating modes (free-space, transition, steady contact).
 
 **Status:** Done (paper branch)
 
-## Methods
+## Methods (as implemented in code)
 
-| Method | Lifting | Delay | Description |
-|--------|---------|-------|-------------|
-| Persistence | — | — | Baseline: predict `s_{t+1} = s_t` |
-| ARX | — | — | Per-mode linear autoregression |
-| Linear | — | No | OLS on raw 9-dim state + 3-dim input |
-| Linear-d | — | Yes | OLS with delay embedding (19-dim) |
-| EDMD | 20-dim | No | Hand-crafted lifting (squared + cross terms) |
-| EDMD-d | 20-dim | Yes | EDMD + delay embedding. **Best overall.** |
+| Method | Lifting | Description |
+|--------|---------|-------------|
+| Persistence | — | Baseline: predict `s_{t+1} = s_t` |
+| ARX | — | Per-mode linear autoregression (OLS) |
+| EDMD | 20-dim | Per-mode Koopman with hand-crafted lifting (squared + cross terms) |
+
+These are the three methods compared in `evaluate.py`. The paper narrative (DMD / Linear / Linear-d / EDMD / EDMD-d) extends this with delay-embedding variants; those additional comparisons live on downstream branches (`feature/narx-comparison` etc.).
 
 ## State and Modes
 
@@ -62,7 +61,7 @@ python /home/andy/franka_ros2_ws/src/koopman/plot_spectrum.py
 
 ## Key Results
 
-EDMD-d is the best method overall. Per-mode switching + delay embedding captures the hybrid contact dynamics that global linear models miss. See `evaluate.py` output and `koopman_report.tex` for full comparison tables.
+EDMD outperforms ARX and persistence on one-step and rollout metrics, especially in M1 (transition). Per-mode switching is critical — a single global model misses mode-specific dynamics. See `evaluate.py` output and `koopman_report.tex` for full comparison tables.
 
 ## Training Rules
 
