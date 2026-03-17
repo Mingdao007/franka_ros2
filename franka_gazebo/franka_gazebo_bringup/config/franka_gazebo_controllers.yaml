@@ -153,8 +153,9 @@ hybrid_circle_force_controller:
     pub_decimation: 1
 
     # Circle trajectory in desk plane (XY)
-    circle_radius: 0.03
-    circle_frequency: 0.1
+    # Reduced radius for hemisphere (r=0.10m) — stay near top where normal ≈ -z
+    circle_radius: 0.02
+    circle_frequency: 0.05
     use_current_pose_as_center: true
     circle_center_offset_x: 0.0
     circle_center_offset_y: 0.0
@@ -167,7 +168,8 @@ hybrid_circle_force_controller:
     d_filter_alpha_xy: 0.5
 
     # Z-axis force PID
-    force_desired: 5.0
+    # Gentler force for curved surface testing
+    force_desired: 2.0
     force_kp: 0.02
     force_ki: 0.005
     force_kd: 0.008
@@ -201,10 +203,10 @@ hybrid_circle_force_controller:
     ink_line_width: 0.001
     ink_max_points: 5000
 
-    # Contact-point alignment: project ink to paper surface in world frame.
-    # direct_force_world.sdf places paper top at approximately z=0.4160.
+    # Contact-point alignment: project ink to surface in world frame.
+    # Hemisphere top at z=0.50 (sphere center at table top z=0.40, r=0.10).
     ink_project_to_surface: true
-    ink_surface_z: 0.4160
+    ink_surface_z: 0.50
     ink_surface_epsilon: 0.0005
     # Used only when ink_project_to_surface=false (TCP -> contact shift).
     ink_contact_offset_z: -0.03
