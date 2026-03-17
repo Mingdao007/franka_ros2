@@ -2,7 +2,7 @@
 
 Per-mode comparison of Koopman operator (EDMD) against linear baselines for predicting FR3 hybrid contact dynamics across three operating modes (free-space, transition, steady contact).
 
-**Status:** Done (paper branch)
+**Status:** Done
 
 ## Methods (as implemented in code)
 
@@ -12,7 +12,7 @@ Per-mode comparison of Koopman operator (EDMD) against linear baselines for pred
 | ARX | — | Per-mode linear autoregression (OLS) |
 | EDMD | 20-dim | Per-mode Koopman with hand-crafted lifting (squared + cross terms) |
 
-These are the three methods compared in `evaluate.py`. The paper narrative (DMD / Linear / Linear-d / EDMD / EDMD-d) extends this with delay-embedding variants; those additional comparisons live on downstream branches (`feature/narx-comparison` etc.).
+These are the three methods compared in `evaluate.py`. Delay-embedding variants and additional comparisons live on downstream branches (`feature/narx-comparison` etc.).
 
 ## State and Modes
 
@@ -36,9 +36,7 @@ EDMD lifting (20-dim): 12 linear + 3 squared (fz², ex², ey²) + 5 cross-terms 
 | `edmd.py` | Per-mode EDMD with 20-dim lifting (OLS fit) |
 | `evaluate.py` | One-step NRMSE, mode-internal rollout, full-process rollout, peak metrics |
 | `plot_spectrum.py` | Eigenvalue spectrum visualization (unit circle) |
-| `koopman_report.tex` | LaTeX paper draft |
-| `data/` | Trained models + training tables |
-| `figures/` | Paper figures |
+| `plot_results.py` | Comparison figures |
 
 ## How to Run
 
@@ -61,7 +59,7 @@ python /home/andy/franka_ros2_ws/src/koopman/plot_spectrum.py
 
 ## Key Results
 
-EDMD outperforms ARX and persistence on one-step and rollout metrics, especially in M1 (transition). Per-mode switching is critical — a single global model misses mode-specific dynamics. See `evaluate.py` output and `koopman_report.tex` for full comparison tables.
+EDMD outperforms ARX and persistence on one-step and rollout metrics, especially in M1 (transition). Per-mode switching is critical — a single global model misses mode-specific dynamics. See `evaluate.py` output for full comparison tables.
 
 ## Training Rules
 
