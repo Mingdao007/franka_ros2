@@ -2,6 +2,7 @@
 .idea
 .vscode
 *.pyc
+__pycache__/
 COLCON_IGNORE
 AMENT_IGNORE
 cmake-build-*/
@@ -12,3 +13,22 @@ libfranka
 franka_description
 results/
 *.sweep_backup
+
+# Claude Code local config
+.claude/
+
+# Koopman data (too large for git)
+koopman/data/
+koopman/data_ood/
+
+# Koopman intermediate outputs
+koopman/frames/
+
+# LaTeX build artifacts
+koopman/*.aux
+koopman/*.bbl
+koopman/*.blg
+koopman/*.fdb_latexmk
+koopman/*.fls
+koopman/*.log
+koopman/koopman_report.pdf
