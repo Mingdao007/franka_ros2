@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/frankarobotics/franka_ros2/actions/workflows/ci.yml/badge.svg)](https://github.com/frankarobotics/franka_ros2/actions/workflows/ci.yml)
 
+> **Fork note:** This fork (`Mingdao007/franka_ros2`) adds experimental force-control and Koopman operator branches for hybrid contact dynamics research. See **[BRANCHES.md](BRANCHES.md)** for a full branch index.
+
 > **Note:** _franka_ros2_ is not officially supported on Windows.
 
 ## Table of Contents
