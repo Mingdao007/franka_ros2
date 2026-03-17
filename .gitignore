@@ -2,8 +2,8 @@
 .idea
 .vscode
 *.pyc
+__pycache__/
 COLCON_IGNORE
-!franka_mobile_sensors/COLCON_IGNORE
 AMENT_IGNORE
 cmake-build-*/
 build/
@@ -12,3 +12,25 @@ log/
 libfranka
 franka_description
 olvx_descriptions_module
+
+# Claude Code local config
+.claude/
+
+# Experiment results (large CSV/binary data)
+results/
+
+# Koopman data (too large for git)
+koopman/data/
+koopman/data_ood/
+
+# Koopman intermediate outputs
+koopman/frames/
+
+# LaTeX build artifacts
+koopman/*.aux
+koopman/*.bbl
+koopman/*.blg
+koopman/*.fdb_latexmk
+koopman/*.fls
+koopman/*.log
+koopman/koopman_report.pdf
