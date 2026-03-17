@@ -19,8 +19,8 @@ All controllers share the `HybridCircleForceController` base with Pinocchio dyna
 
 | Branch | Status | Description | Key Files |
 |--------|--------|-------------|-----------|
-| `feature/koopman-v1` | Done | Per-mode comparison: Persistence vs ARX vs EDMD. Paper branch. | `koopman/{preprocess,baselines,edmd,evaluate}.py` |
-| `feature/koopman-v1-ood` | WIP | OOD evaluation (placeholder — scripts not yet committed). | `koopman/evaluate_ood.py` (planned) |
+| `feature/koopman-v1` | Done | Per-mode comparison: Persistence vs ARX vs EDMD. | `koopman/{preprocess,baselines,edmd,evaluate}.py` |
+| `feature/koopman-v1-ood` | WIP | OOD evaluation of v1 models. | `koopman/evaluate_ood.py`, `run_ood_experiment.sh` |
 | `feature/narx-comparison` | Done | NARX MLP baseline vs EDMD on M1 rollout. | `koopman/{narx,evaluate_narx}.py` |
 
 ## Learned-Extension Branches (all closed)
