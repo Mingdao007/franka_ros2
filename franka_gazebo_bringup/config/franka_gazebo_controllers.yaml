@@ -88,7 +88,7 @@
       i_limit: 10.0
       max_force_command: 60.0
       command_sign: -1.0
-      force_filter_alpha: 0.80
+      force_filter_alpha: 0.05
       d_filter_alpha: 0.5
       lambda: 0.01
       use_bias_calibration: false

@@ -66,8 +66,8 @@ CallbackReturn HybridCircleForceController::on_init() {
     auto_declare<double>("i_limit", 15.0);
     auto_declare<double>("max_force_command", 60.0);
     auto_declare<double>("command_sign", -1.0);
-    auto_declare<double>("force_filter_alpha", 0.95);
-    auto_declare<double>("d_filter_alpha", 0.0);
+    auto_declare<double>("force_filter_alpha", 0.8);
+    auto_declare<double>("d_filter_alpha", 0.5);
     auto_declare<double>("lambda", 0.01);
 
     auto_declare<bool>("use_bias_calibration", false);
@@ -81,6 +81,9 @@ CallbackReturn HybridCircleForceController::on_init() {
     auto_declare<double>("descent_ki_z", 0.0);
     auto_declare<double>("descent_speed", 0.02);
     auto_declare<double>("descent_contact_force", 2.0);
+
+    auto_declare<bool>("use_ft_sensor", false);
+    auto_declare<std::string>("ft_sensor_topic", "");
 
     auto_declare<std::string>("wrench_frame_id", "world");
     auto_declare<int>("pub_decimation", 1);
@@ -193,6 +196,29 @@ CallbackReturn HybridCircleForceController::on_configure(
       "~/estimated_wrench", 10);
   pub_wrench_cmd_ = get_node()->create_publisher<geometry_msgs::msg::WrenchStamped>(
       "~/commanded_wrench", 10);
+
+  // FT sensor: subscribe to bridged Gazebo ForceTorqueSensor topic.
+  use_ft_sensor_ = get_node()->get_parameter("use_ft_sensor").as_bool();
+  ft_sensor_topic_ = get_node()->get_parameter("ft_sensor_topic").as_string();
+  if (use_ft_sensor_) {
+    if (ft_sensor_topic_.empty()) {
+      RCLCPP_FATAL(get_node()->get_logger(),
+                   "use_ft_sensor=true but ft_sensor_topic is empty.");
+      return CallbackReturn::FAILURE;
+    }
+    ft_sensor_sub_ = get_node()->create_subscription<geometry_msgs::msg::WrenchStamped>(
+        ft_sensor_topic_, rclcpp::SensorDataQoS(),
+        [this](const geometry_msgs::msg::WrenchStamped::SharedPtr msg) {
+          std::lock_guard<std::mutex> lock(ft_mutex_);
+          latest_ft_msg_ = *msg;
+          ft_data_received_.store(true);
+        });
+    RCLCPP_INFO(get_node()->get_logger(),
+                "FT sensor mode: subscribing to '%s'", ft_sensor_topic_.c_str());
+  } else {
+    RCLCPP_INFO(get_node()->get_logger(),
+                "Jacobian force estimation mode (use_ft_sensor=false).");
+  }
 
   // RViz marker publishers for ink trails.
   if (ink_enabled_) {
@@ -443,7 +469,19 @@ controller_interface::return_type HybridCircleForceController::update(
 
   const Matrix67d J = compute_jacobian();
   const Vector7d tau_ext = compute_external_torque();
-  const Vector6d F_hat = estimate_cartesian_force(J, tau_ext);
+
+  Vector6d F_hat;
+  if (use_ft_sensor_ && ft_data_received_.load()) {
+    std::lock_guard<std::mutex> lock(ft_mutex_);
+    F_hat << latest_ft_msg_.wrench.force.x,
+             latest_ft_msg_.wrench.force.y,
+             latest_ft_msg_.wrench.force.z,
+             latest_ft_msg_.wrench.torque.x,
+             latest_ft_msg_.wrench.torque.y,
+             latest_ft_msg_.wrench.torque.z;
+  } else {
+    F_hat = estimate_cartesian_force(J, tau_ext);
+  }
 
   const Vector3d p_ee = compute_ee_position(q_pin);
   const Vector3d v_ee = J.topRows<3>() * dq_;
@@ -462,8 +500,9 @@ controller_interface::return_type HybridCircleForceController::update(
   }
 
   // Force estimation (needed by both phases).
+  // EMA: alpha=1.0 means no filtering (use raw), alpha=0.0 means frozen (max smoothing).
   const double fz_meas_raw = F_hat(2);
-  f_meas_filtered_ = force_filter_alpha_ * f_meas_filtered_ + (1.0 - force_filter_alpha_) * fz_meas_raw;
+  f_meas_filtered_ = force_filter_alpha_ * fz_meas_raw + (1.0 - force_filter_alpha_) * f_meas_filtered_;
   const double fz_meas = command_sign_ * f_meas_filtered_;
 
   double ex = 0.0, ey = 0.0;
@@ -553,8 +592,8 @@ controller_interface::return_type HybridCircleForceController::update(
     // XY PID: filtered derivative of position error.
     const double dex_raw = (dt > 1e-9) ? (ex - ex_prev_) / dt : 0.0;
     const double dey_raw = (dt > 1e-9) ? (ey - ey_prev_) / dt : 0.0;
-    dex_filtered_ = d_filter_alpha_xy_ * dex_filtered_ + (1.0 - d_filter_alpha_xy_) * dex_raw;
-    dey_filtered_ = d_filter_alpha_xy_ * dey_filtered_ + (1.0 - d_filter_alpha_xy_) * dey_raw;
+    dex_filtered_ = (1.0 - d_filter_alpha_xy_) * dex_filtered_ + d_filter_alpha_xy_ * dex_raw;
+    dey_filtered_ = (1.0 - d_filter_alpha_xy_) * dey_filtered_ + d_filter_alpha_xy_ * dey_raw;
     ex_prev_ = ex;
     ey_prev_ = ey;
 
@@ -568,7 +607,7 @@ controller_interface::return_type HybridCircleForceController::update(
     if (i_state_ < -i_limit_) i_state_ = -i_limit_;
 
     const double de_raw = (dt > 1e-9) ? (e_force - e_prev_) / dt : 0.0;
-    de_filtered_ = d_filter_alpha_ * de_filtered_ + (1.0 - d_filter_alpha_) * de_raw;
+    de_filtered_ = (1.0 - d_filter_alpha_) * de_filtered_ + d_filter_alpha_ * de_raw;
     e_prev_ = e_force;
 
     const double u_force = force_kp_ * e_force + force_ki_ * i_state_ + force_kd_ * de_filtered_;

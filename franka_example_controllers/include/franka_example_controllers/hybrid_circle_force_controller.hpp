@@ -6,9 +6,11 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <cstdint>
 #include <fstream>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -98,8 +100,8 @@ class HybridCircleForceController : public controller_interface::ControllerInter
   double i_limit_{15.0};
   double max_force_command_{60.0};
   double command_sign_{-1.0};
-  double force_filter_alpha_{0.95};
-  double d_filter_alpha_{0.0};
+  double force_filter_alpha_{0.8};
+  double d_filter_alpha_{0.5};
   double lambda_{0.01};
 
   // Safety and damping.
@@ -151,6 +153,14 @@ class HybridCircleForceController : public controller_interface::ControllerInter
   bool center_initialized_{false};
   double circle_center_x_{0.0};
   double circle_center_y_{0.0};
+
+  // FT sensor integration: switch between Jacobian estimation and direct sensor.
+  bool use_ft_sensor_{false};
+  std::string ft_sensor_topic_;
+  rclcpp::Subscription<geometry_msgs::msg::WrenchStamped>::SharedPtr ft_sensor_sub_;
+  geometry_msgs::msg::WrenchStamped latest_ft_msg_;
+  std::mutex ft_mutex_;
+  std::atomic<bool> ft_data_received_{false};
 
   // Monitoring publishers.
   rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr pub_wrench_est_;
