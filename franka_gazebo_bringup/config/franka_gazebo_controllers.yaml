@@ -89,8 +89,12 @@
       max_force_command: 60.0
       command_sign: -1.0
       force_filter_alpha: 0.05
+      force_filter_alpha_jacobian: 0.05
+      force_filter_alpha_ft: 1.0
       d_filter_alpha: 0.5
       lambda: 0.01
+      use_ft_sensor: false
+      ft_sensor_topic: "/world/direct_force_world/model/fr3/joint/fr3_ball_tip_joint/sensor/fr3_ft_sensor/forcetorque"
       use_bias_calibration: false
       descent_kp_xy: 6000.0
       descent_kd_xy: 200.0

@@ -100,7 +100,9 @@ class HybridCircleForceController : public controller_interface::ControllerInter
   double i_limit_{15.0};
   double max_force_command_{60.0};
   double command_sign_{-1.0};
-  double force_filter_alpha_{0.8};
+  double force_filter_alpha_{0.05};
+  double force_filter_alpha_jacobian_{-1.0};
+  double force_filter_alpha_ft_{-1.0};
   double d_filter_alpha_{0.5};
   double lambda_{0.01};
 
@@ -128,8 +130,8 @@ class HybridCircleForceController : public controller_interface::ControllerInter
   Vector7d tau_ext_initial_{Vector7d::Zero()};
   Vector7d tau_cmd_prev_{Vector7d::Zero()};
 
-  // Phase state machine: descent → circle.
-  enum class Phase { kDescent, kCircle };
+  // Phase state machine: descent → circle → (liftoff → descent → circle ...).
+  enum class Phase { kDescent, kCircle, kLiftOff };
   Phase phase_{Phase::kDescent};
   double descent_kp_xy_{4000.0};
   double descent_kd_xy_{160.0};
@@ -148,6 +150,15 @@ class HybridCircleForceController : public controller_interface::ControllerInter
   double ex_prev_descent_{0.0};
   double ey_prev_descent_{0.0};
   double ez_prev_descent_{0.0};
+
+  // Contact cycling (liftoff/re-contact).
+  bool enable_contact_cycling_{false};
+  double contact_cycle_period_{3.0};
+  double liftoff_height_{0.01};
+  double liftoff_speed_{0.03};
+  double cycle_timer_{0.0};
+  double liftoff_start_z_{0.0};
+  double liftoff_target_z_{0.0};
 
   // Circle center is initialized from first valid EE pose.
   bool center_initialized_{false};

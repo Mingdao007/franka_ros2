@@ -66,7 +66,9 @@ CallbackReturn HybridCircleForceController::on_init() {
     auto_declare<double>("i_limit", 15.0);
     auto_declare<double>("max_force_command", 60.0);
     auto_declare<double>("command_sign", -1.0);
-    auto_declare<double>("force_filter_alpha", 0.8);
+    auto_declare<double>("force_filter_alpha", 0.05);
+    auto_declare<double>("force_filter_alpha_jacobian", -1.0);
+    auto_declare<double>("force_filter_alpha_ft", -1.0);
     auto_declare<double>("d_filter_alpha", 0.5);
     auto_declare<double>("lambda", 0.01);
 
@@ -81,6 +83,11 @@ CallbackReturn HybridCircleForceController::on_init() {
     auto_declare<double>("descent_ki_z", 0.0);
     auto_declare<double>("descent_speed", 0.02);
     auto_declare<double>("descent_contact_force", 2.0);
+
+    auto_declare<bool>("enable_contact_cycling", false);
+    auto_declare<double>("contact_cycle_period", 3.0);
+    auto_declare<double>("liftoff_height", 0.01);
+    auto_declare<double>("liftoff_speed", 0.03);
 
     auto_declare<bool>("use_ft_sensor", false);
     auto_declare<std::string>("ft_sensor_topic", "");
@@ -140,6 +147,11 @@ CallbackReturn HybridCircleForceController::on_configure(
   max_force_command_ = get_node()->get_parameter("max_force_command").as_double();
   command_sign_ = get_node()->get_parameter("command_sign").as_double();
   force_filter_alpha_ = get_node()->get_parameter("force_filter_alpha").as_double();
+  force_filter_alpha_jacobian_ = get_node()->get_parameter("force_filter_alpha_jacobian").as_double();
+  force_filter_alpha_ft_ = get_node()->get_parameter("force_filter_alpha_ft").as_double();
+  // If per-mode alphas not set (negative), fall back to the shared value.
+  if (force_filter_alpha_jacobian_ < 0.0) force_filter_alpha_jacobian_ = force_filter_alpha_;
+  if (force_filter_alpha_ft_ < 0.0) force_filter_alpha_ft_ = force_filter_alpha_;
   d_filter_alpha_ = get_node()->get_parameter("d_filter_alpha").as_double();
   lambda_ = get_node()->get_parameter("lambda").as_double();
 
@@ -153,6 +165,11 @@ CallbackReturn HybridCircleForceController::on_configure(
   descent_ki_z_ = get_node()->get_parameter("descent_ki_z").as_double();
   descent_speed_ = get_node()->get_parameter("descent_speed").as_double();
   descent_contact_force_ = get_node()->get_parameter("descent_contact_force").as_double();
+
+  enable_contact_cycling_ = get_node()->get_parameter("enable_contact_cycling").as_bool();
+  contact_cycle_period_ = get_node()->get_parameter("contact_cycle_period").as_double();
+  liftoff_height_ = get_node()->get_parameter("liftoff_height").as_double();
+  liftoff_speed_ = get_node()->get_parameter("liftoff_speed").as_double();
 
   auto jd = get_node()->get_parameter("joint_damping").as_double_array();
   if (jd.size() == static_cast<size_t>(num_joints)) {
@@ -331,6 +348,11 @@ CallbackReturn HybridCircleForceController::on_activate(
   ey_prev_descent_ = 0.0;
   ez_prev_descent_ = 0.0;
 
+  // Contact cycling state.
+  cycle_timer_ = 0.0;
+  liftoff_start_z_ = 0.0;
+  liftoff_target_z_ = 0.0;
+
   center_initialized_ = false;
   phase_ = Phase::kDescent;
   descent_start_z_ = 0.0;
@@ -501,8 +523,12 @@ controller_interface::return_type HybridCircleForceController::update(
 
   // Force estimation (needed by both phases).
   // EMA: alpha=1.0 means no filtering (use raw), alpha=0.0 means frozen (max smoothing).
+  // Per-mode alpha: Jacobian may need heavy filtering, FT sensor can use light/no filtering.
+  const double active_alpha = (use_ft_sensor_ && ft_data_received_.load())
+                                  ? force_filter_alpha_ft_
+                                  : force_filter_alpha_jacobian_;
   const double fz_meas_raw = F_hat(2);
-  f_meas_filtered_ = force_filter_alpha_ * fz_meas_raw + (1.0 - force_filter_alpha_) * f_meas_filtered_;
+  f_meas_filtered_ = active_alpha * fz_meas_raw + (1.0 - active_alpha) * f_meas_filtered_;
   const double fz_meas = command_sign_ * f_meas_filtered_;
 
   double ex = 0.0, ey = 0.0;
@@ -618,6 +644,56 @@ controller_interface::return_type HybridCircleForceController::update(
     F_cmd(0) = fx_cmd;
     F_cmd(1) = fy_cmd;
     F_cmd(2) = fz_cmd;
+
+    // Contact cycling: trigger liftoff periodically.
+    if (enable_contact_cycling_) {
+      cycle_timer_ += dt;
+      if (cycle_timer_ >= contact_cycle_period_) {
+        cycle_timer_ = 0.0;
+        liftoff_start_z_ = p_ee(2);
+        liftoff_target_z_ = liftoff_start_z_ + liftoff_height_;
+        phase_ = Phase::kLiftOff;
+        // Reset descent PID for re-contact.
+        ix_descent_ = 0.0;
+        iy_descent_ = 0.0;
+        iz_descent_ = 0.0;
+        ex_prev_descent_ = 0.0;
+        ey_prev_descent_ = 0.0;
+        ez_prev_descent_ = 0.0;
+        RCLCPP_INFO(get_node()->get_logger(),
+                     "Liftoff triggered at z=%.4f, target z=%.4f", liftoff_start_z_, liftoff_target_z_);
+      }
+    }
+  }
+
+  // --- LiftOff phase: move up, then switch to descent for re-contact ---
+  if (phase_ == Phase::kLiftOff) {
+    const double z_des = liftoff_target_z_;
+
+    // XY: hold at circle center.
+    const double dex = circle_center_x_ - p_ee(0);
+    const double dey = circle_center_y_ - p_ee(1);
+    const double dez = z_des - p_ee(2);
+
+    F_cmd(0) = descent_kp_xy_ * dex + descent_kd_xy_ * (-v_ee(0));
+    F_cmd(1) = descent_kp_xy_ * dey + descent_kd_xy_ * (-v_ee(1));
+    F_cmd(2) = descent_kp_z_ * dez + descent_kd_z_ * (-v_ee(2));
+
+    if (F_cmd(2) > max_force_command_) F_cmd(2) = max_force_command_;
+    if (F_cmd(2) < -max_force_command_) F_cmd(2) = -max_force_command_;
+
+    fz_cmd = F_cmd(2);
+    ex = dex;
+    ey = dey;
+
+    // Once we reach the target height, switch to descent for re-contact.
+    if (p_ee(2) >= liftoff_target_z_ - 0.001) {
+      phase_ = Phase::kDescent;
+      descent_start_z_ = p_ee(2);
+      elapsed_time_ = 0.0;
+      RCLCPP_INFO(get_node()->get_logger(),
+                   "Liftoff complete at z=%.4f, starting re-descent", p_ee(2));
+    }
   }
 
   // Null-space projector: N = I - J_pinv * J (damping only in null space,
@@ -751,7 +827,7 @@ controller_interface::return_type HybridCircleForceController::update(
               << ex << "," << ey << ","
               << v_ee(0) << "," << v_ee(1) << "," << v_ee(2) << ","
               << force_desired_ << "," << fz_meas << "," << fz_cmd << ","
-              << (phase_ == Phase::kDescent ? 0 : 1) << "\n";
+              << (phase_ == Phase::kDescent ? 0 : (phase_ == Phase::kCircle ? 1 : 2)) << "\n";
   }
 
   return controller_interface::return_type::OK;

@@ -23,8 +23,9 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
-def get_robot_description(context: LaunchContext, arm_id, load_gripper, franka_hand):
+def get_robot_description(context: LaunchContext, arm_id, load_gripper, franka_hand, initial_joint_positions):
     arm_id_str = context.perform_substitution(arm_id)
+    init_pos_str = context.perform_substitution(initial_joint_positions)
 
     franka_xacro_file = os.path.join(
         get_package_share_directory("franka_description"),
@@ -87,9 +88,33 @@ def get_robot_description(context: LaunchContext, arm_id, load_gripper, franka_h
       <child link="{arm_id_str}_ball_tip_tcp"/>
       <origin xyz="0 0 0.045" rpy="0 0 0"/>
     </joint>
+    <gazebo reference="{arm_id_str}_ball_tip_joint">
+      <sensor name="{arm_id_str}_ft_sensor" type="force_torque">
+        <always_on>true</always_on>
+        <update_rate>1000</update_rate>
+        <force_torque>
+          <frame>child</frame>
+          <measure_direction>child_to_parent</measure_direction>
+        </force_torque>
+      </sensor>
+    </gazebo>
     """
     for elem in ET.fromstring(f"<wrapper>{ball_tip_xml}</wrapper>"):
         tree.append(elem)
+
+    # Override initial joint positions if provided (comma-separated, 7 values).
+    if init_pos_str:
+        init_vals = [float(v) for v in init_pos_str.split(",")]
+        if len(init_vals) == 7:
+            for i, val in enumerate(init_vals):
+                jname = f"{arm_id_str}_joint{i+1}"
+                for joint_el in tree.iter("joint"):
+                    if joint_el.get("name") == jname:
+                        for si in joint_el.iter("state_interface"):
+                            if si.get("name") == "position":
+                                param = si.find("param[@name='initial_value']")
+                                if param is not None:
+                                    param.text = str(val)
 
     robot_description_xml = ET.tostring(tree, encoding="unicode")
     robot_description = {"robot_description": robot_description_xml}
@@ -138,12 +163,14 @@ def generate_launch_description():
     arm_id_name = "arm_id"
     use_rviz_name = "use_rviz"
     headless_name = "headless"
+    initial_joint_positions_name = "initial_joint_positions"
 
     load_gripper = LaunchConfiguration(load_gripper_name)
     franka_hand = LaunchConfiguration(franka_hand_name)
     arm_id = LaunchConfiguration(arm_id_name)
     use_rviz = LaunchConfiguration(use_rviz_name)
     headless = LaunchConfiguration(headless_name)
+    initial_joint_positions = LaunchConfiguration(initial_joint_positions_name)
 
     load_gripper_launch_argument = DeclareLaunchArgument(
         load_gripper_name,
@@ -170,10 +197,15 @@ def generate_launch_description():
         default_value="false",
         description="Run Gazebo in server-only mode (true/false)",
     )
+    initial_joint_positions_launch_argument = DeclareLaunchArgument(
+        initial_joint_positions_name,
+        default_value="",
+        description="Comma-separated initial joint positions (7 values), empty=URDF default",
+    )
 
     robot_state_publisher = OpaqueFunction(
         function=get_robot_description,
-        args=[arm_id, load_gripper, franka_hand],
+        args=[arm_id, load_gripper, franka_hand, initial_joint_positions],
     )
 
     desc_share_parent = os.path.dirname(get_package_share_directory("franka_description"))
@@ -217,6 +249,18 @@ def generate_launch_description():
         output="screen",
     )
 
+    # Bridge Ignition FT sensor topic to ROS 2 WrenchStamped
+    ft_bridge = Node(
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        name="ft_sensor_bridge",
+        arguments=[
+            "/world/direct_force_world/model/fr3/joint/fr3_ball_tip_joint/sensor/fr3_ft_sensor/forcetorque"
+            "@geometry_msgs/msg/WrenchStamped[gz.msgs.Wrench"
+        ],
+        output="screen",
+    )
+
     # Load controllers after spawn completes.
     # The spawner's --controller-manager-timeout handles waiting for CM readiness.
     delayed_load_jsb = TimerAction(period=0.5, actions=[load_joint_state_broadcaster])
@@ -229,11 +273,13 @@ def generate_launch_description():
             arm_id_launch_argument,
             use_rviz_launch_argument,
             headless_launch_argument,
+            initial_joint_positions_launch_argument,
             set_gz_sim_resource_path,
             gazebo,
             robot_state_publisher,
             rviz,
             spawn,
+            ft_bridge,
             RegisterEventHandler(
                 OnProcessExit(
                     target_action=spawn,
