@@ -40,6 +40,7 @@ add_library(
         src/fr3/cartesian_velocity_example_controller.cpp
         src/fr3/elbow_example_controller.cpp
         src/hybrid_circle_force_controller.cpp
+        src/cheating_force_controller.cpp
         src/fr3/gravity_compensation_example_controller.cpp
         src/fr3/gripper_example_controller.cpp
         src/fr3/joint_impedance_example_controller.cpp

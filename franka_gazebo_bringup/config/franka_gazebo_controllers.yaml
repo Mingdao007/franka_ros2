@@ -27,6 +27,9 @@
       hybrid_circle_force_controller:
         type: franka_example_controllers/HybridCircleForceController
 
+      cheating_force_controller:
+        type: franka_example_controllers/CheatingForceController
+
 /**:
   joint_position_example_controller:
     ros__parameters:
@@ -111,3 +114,42 @@
       ink_surface_z: 0.4160
       ink_surface_epsilon: 0.0005
       ink_contact_offset_z: -0.03
+
+/**:
+  cheating_force_controller:
+    ros__parameters:
+      arm_id: "fr3"
+      ee_link: "fr3_ball_tip_tcp"
+
+      # Circle trajectory
+      circle_radius: 0.03
+      circle_frequency: 0.1
+      use_current_pose_as_center: true
+      circle_center_offset_x: 0.0
+      circle_center_offset_y: 0.0
+
+      # Cartesian PD gains
+      kp_xy: 6000.0
+      kd_xy: 200.0
+      kp_z: 6000.0
+      kd_z: 200.0
+
+      # Pinocchio compensation toggles (ablation)
+      enable_gravity_comp: true
+      enable_coriolis_comp: false
+      enable_feedforward_accel: false
+
+      # Null-space and torque limits
+      joint_damping: [15.0, 15.0, 15.0, 15.0, 10.0, 8.0, 5.0]
+      lambda: 0.01
+      delta_tau_max: 1.0
+      soft_start_duration: 2.0
+
+      # Ink trail visualization
+      ink_enabled: true
+      ink_trail_decimation: 50
+      ink_line_width: 0.001
+      ink_max_points: 5000
+
+      # CSV logging (empty = disabled)
+      log_file_path: ""
