@@ -342,15 +342,9 @@ controller_interface::return_type CheatingForceController::update(
                 circle_center_x_, circle_center_y_, hold_z_);
   }
 
-  // --- Smooth gain ramp (0→1 over soft_start_duration_) ---
-  // Ramps gravity comp AND PD gains together so there's no discontinuity.
-  const double gain_ramp = (elapsed_time_ < soft_start_duration_)
-      ? 0.5 * (1.0 - std::cos(M_PI * elapsed_time_ / soft_start_duration_))
-      : 1.0;
-
-  // Circle radius ramp starts AFTER gains reach ~50% (half of soft_start).
-  const double circle_delay = soft_start_duration_ * 0.5;
-  const double circle_time = std::max(0.0, elapsed_time_ - circle_delay);
+  // Circle radius ramp: cosine ease-in over soft_start_duration_.
+  // Gravity comp and PD run at full strength from t=0.
+  const double circle_time = std::max(0.0, elapsed_time_);
   const double circle_ramp_dur = soft_start_duration_;
   const double circle_ramp = (circle_time < circle_ramp_dur)
       ? 0.5 * (1.0 - std::cos(M_PI * circle_time / circle_ramp_dur))
@@ -389,12 +383,12 @@ controller_interface::return_type CheatingForceController::update(
   const double evy = vy_des - v_ee(1);
   const double evz = vz_des - v_ee(2);
 
-  // --- Cartesian PD (scaled by gain_ramp) ---
+  // --- Cartesian PD (full gains from t=0; circle_ramp handles smooth onset) ---
   Vector6d F_cmd = Vector6d::Zero();
-  const double kp_xy_eff = kp_xy_ * gain_ramp;
-  const double kd_xy_eff = kd_xy_ * gain_ramp;
-  const double kp_z_eff = kp_z_ * gain_ramp;
-  const double kd_z_eff = kd_z_ * gain_ramp;
+  const double kp_xy_eff = kp_xy_;
+  const double kd_xy_eff = kd_xy_;
+  const double kp_z_eff = kp_z_;
+  const double kd_z_eff = kd_z_;
   F_cmd(0) = kp_xy_eff * ex + kd_xy_eff * evx + (enable_feedforward_accel_ ? ax_des : 0.0);
   F_cmd(1) = kp_xy_eff * ey + kd_xy_eff * evy + (enable_feedforward_accel_ ? ay_des : 0.0);
   F_cmd(2) = kp_z_eff * ez + kd_z_eff * evz + (enable_feedforward_accel_ ? az_des : 0.0);
@@ -417,7 +411,7 @@ controller_interface::return_type CheatingForceController::update(
     for (int i = 0; i < num_joints; ++i) {
       const int idx_v = pin_v_idx_[i];
       if (idx_v >= 0 && idx_v < tau_g_full.size()) {
-        tau_cmd(i) += gain_ramp * tau_g_full(idx_v);
+        tau_cmd(i) += tau_g_full(idx_v);
       }
     }
   }
@@ -431,7 +425,7 @@ controller_interface::return_type CheatingForceController::update(
     for (int i = 0; i < num_joints; ++i) {
       const int idx_v = pin_v_idx_[i];
       if (idx_v >= 0 && idx_v < nle_full.size()) {
-        tau_cmd(i) += gain_ramp * (nle_full(idx_v) - tau_g_only(idx_v));
+        tau_cmd(i) += nle_full(idx_v) - tau_g_only(idx_v);
       }
     }
   }

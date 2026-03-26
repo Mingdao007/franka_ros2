@@ -14,6 +14,7 @@ from launch.actions import (
     OpaqueFunction,
     RegisterEventHandler,
     SetEnvironmentVariable,
+    Shutdown,
     TimerAction,
 )
 from launch.conditions import IfCondition
@@ -118,6 +119,7 @@ def get_gazebo_action(context: LaunchContext, headless):
         "gz_gui.config",
     )
 
+    # Start running — we pause AFTER spawn, activate controller, then unpause.
     gz_args = f"{world} -r"
     if headless_str == "true":
         gz_args += " --headless-rendering"
@@ -210,17 +212,20 @@ def generate_launch_description():
         output="screen",
     )
 
-    load_hybrid_controller = Node(
+    # Direct cheating controller (no warmstart needed — Gazebo starts paused).
+    load_cheating = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["cheating_force_controller", "--controller-manager-timeout", "60"],
         output="screen",
     )
 
-    # Load controllers after spawn completes.
-    # The spawner's --controller-manager-timeout handles waiting for CM readiness.
+    # Simple direct launch — no warmstart, no pause tricks.
+    # gz_ros2_control provides KDL gravity comp internally,
+    # so the controller only needs PD (no Pinocchio gravity comp).
     delayed_load_jsb = TimerAction(period=0.5, actions=[load_joint_state_broadcaster])
-    delayed_load_hybrid = TimerAction(period=1.5, actions=[load_hybrid_controller])
+    delayed_load_cheating = TimerAction(period=1.5, actions=[load_cheating])
+    auto_shutdown = TimerAction(period=25.0, actions=[Shutdown(reason="Test complete")])
 
     return LaunchDescription(
         [
@@ -237,7 +242,8 @@ def generate_launch_description():
             RegisterEventHandler(
                 OnProcessExit(
                     target_action=spawn,
-                    on_exit=[delayed_load_jsb, delayed_load_hybrid],
+                    on_exit=[delayed_load_jsb, delayed_load_cheating,
+                             auto_shutdown],
                 )
             ),
         ]

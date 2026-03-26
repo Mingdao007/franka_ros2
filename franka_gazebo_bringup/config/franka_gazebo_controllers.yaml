@@ -43,23 +43,23 @@
 /**:    
   joint_impedance_example_controller:
     ros__parameters:
-      robot_type: "fr3v2"
+      robot_type: "fr3"
       k_gains:
-        - 24.0
-        - 24.0
-        - 24.0
-        - 24.0
-        - 10.0
-        - 6.0
-        - 2.0
+        - 600.0
+        - 600.0
+        - 600.0
+        - 600.0
+        - 250.0
+        - 150.0
+        - 50.0
       d_gains:
-        - 2.0
-        - 2.0
-        - 2.0
-        - 1.0
-        - 1.0
-        - 1.0
-        - 0.5
+        - 50.0
+        - 50.0
+        - 50.0
+        - 50.0
+        - 20.0
+        - 20.0
+        - 10.0
 
 /**:
   mobile_cartesian_velocity_with_ik_example_controller:
@@ -135,7 +135,9 @@
       kd_z: 200.0
 
       # Pinocchio compensation toggles (ablation)
-      enable_gravity_comp: true
+      # gz_ros2_control already adds KDL gravity comp to every effort command.
+      # Enabling Pinocchio gravity comp here would DOUBLE-COUNT gravity.
+      enable_gravity_comp: false
       enable_coriolis_comp: false
       enable_feedforward_accel: false
 
@@ -151,5 +153,5 @@
       ink_line_width: 0.001
       ink_max_points: 5000
 
-      # CSV logging (empty = disabled)
-      log_file_path: ""
+      # CSV logging
+      log_file_path: "/home/andy/franka_ros2_ws/cheating_force_log.csv"
