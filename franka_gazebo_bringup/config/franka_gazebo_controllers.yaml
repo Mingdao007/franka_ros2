@@ -114,6 +114,7 @@
       ink_surface_z: 0.4160
       ink_surface_epsilon: 0.0005
       ink_contact_offset_z: -0.03
+      enable_coriolis_comp: true
 
 /**:
   cheating_force_controller:

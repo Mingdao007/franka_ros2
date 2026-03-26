@@ -184,6 +184,9 @@ class HybridCircleForceController : public controller_interface::ControllerInter
   double ink_contact_offset_z_{-0.03};
   int ink_max_points_{5000};
 
+  // Model-based compensation toggles (cheating terms).
+  bool enable_coriolis_comp_{false};
+
   // Soft start: ramp radius from 0 to target over this duration (seconds).
   double soft_start_duration_{2.0};
 

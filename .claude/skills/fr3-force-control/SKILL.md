@@ -84,6 +84,7 @@ Detailed commands and interpretation:
 - `references/validated-workflow.md`
 
 ## Mandatory guardrails
+- **NEVER enable Pinocchio/KDL gravity comp in effort-mode controllers.** `franka_ign_ros2_control` already adds KDL gravity comp internally. Double-counting causes catastrophic arm fling (proven ITR-009). Always `enable_gravity_comp: false`.
 - One simulation at a time. Always clean residual Gazebo/controller processes before a new run.
 - Prefer short experiments for tuning loops (for example 15-20 seconds) to maximize iteration speed.
 - Never claim success without evidence from report files and logs.

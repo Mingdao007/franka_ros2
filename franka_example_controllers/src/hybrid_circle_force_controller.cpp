@@ -82,6 +82,8 @@ CallbackReturn HybridCircleForceController::on_init() {
     auto_declare<double>("descent_speed", 0.02);
     auto_declare<double>("descent_contact_force", 2.0);
 
+    auto_declare<bool>("enable_coriolis_comp", false);
+
     auto_declare<bool>("use_ft_sensor", false);
     auto_declare<std::string>("ft_sensor_topic", "");
 
@@ -153,6 +155,8 @@ CallbackReturn HybridCircleForceController::on_configure(
   descent_ki_z_ = get_node()->get_parameter("descent_ki_z").as_double();
   descent_speed_ = get_node()->get_parameter("descent_speed").as_double();
   descent_contact_force_ = get_node()->get_parameter("descent_contact_force").as_double();
+
+  enable_coriolis_comp_ = get_node()->get_parameter("enable_coriolis_comp").as_bool();
 
   auto jd = get_node()->get_parameter("joint_damping").as_double_array();
   if (jd.size() == static_cast<size_t>(num_joints)) {
@@ -632,6 +636,21 @@ controller_interface::return_type HybridCircleForceController::update(
   //   tau = J^T * F_cmd + N * (-D * dq)
   // Note: no gravity compensation — Gazebo physics engine handles gravity.
   Vector7d tau_cmd = J_T * F_cmd + N * joint_damping_.cwiseProduct(-dq_);
+
+  // Coriolis compensation: C(q,dq)*dq = nle(q,dq,0) - g(q).
+  if (enable_coriolis_comp_) {
+    const Eigen::VectorXd a_zero = Eigen::VectorXd::Zero(pin_model_.nv);
+    const Eigen::VectorXd v_zero = Eigen::VectorXd::Zero(pin_model_.nv);
+    const Eigen::VectorXd nle_full = pinocchio::rnea(pin_model_, pin_data_, q_pin, v_pin, a_zero);
+    const Eigen::VectorXd tau_g = pinocchio::rnea(pin_model_, pin_data_, q_pin, v_zero, a_zero);
+    for (int i = 0; i < num_joints; ++i) {
+      const int idx_v = pin_v_idx_[i];
+      if (idx_v >= 0 && idx_v < nle_full.size()) {
+        tau_cmd(i) += nle_full(idx_v) - tau_g(idx_v);
+      }
+    }
+  }
+
   tau_cmd = saturate_torque_rate(tau_cmd, tau_cmd_prev_);
   tau_cmd_prev_ = tau_cmd;
 
